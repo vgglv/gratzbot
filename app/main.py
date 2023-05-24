@@ -1,25 +1,12 @@
 from flask import Flask, request, jsonify
-from telegram import Update, Bot
-from telegram.ext import Dispatcher, ContextTypes, CommandHandler
-from os import getenv
-
-token = str(getenv("TELEGRAM_TOKEN"))
-botApp = Bot(token)
-
-def gratztop(update, context):
-    botApp.send_message(chat_id=update.effective_chat.id, text="gratz top")
-
-gratztop_handler = CommandHandler('gratztop', gratztop)
-dispatcher = Dispatcher(botApp, None)
-dispatcher.add_handler(gratztop_handler)
+import bot
 
 app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
 def main():
     value = request.get_json()
-    update = Update.de_json(value, botApp)
-    dispatcher.process_update(update)
+    bot.process(value)
     return jsonify({"status": "ok"})
 
 @app.route("/")
