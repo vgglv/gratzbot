@@ -3,11 +3,12 @@ from telegram import Update, Bot
 from telegram.ext import Dispatcher, ContextTypes, CommandHandler
 from os import getenv
 
-def gratztop(bot: Bot, update: Update):
-    bot.send_message(chat_id=update.effective_chat.id, text="gratz top")
-
 token = str(getenv("TELEGRAM_TOKEN"))
 botApp = Bot(token)
+
+def gratztop(update: Update):
+    botApp.send_message(chat_id=update.effective_chat.id, text="gratz top")
+
 gratztop_handler = CommandHandler('gratztop', gratztop)
 dispatcher = Dispatcher(botApp, None)
 dispatcher.add_handler(gratztop_handler)
