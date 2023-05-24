@@ -1,22 +1,29 @@
-import os
-import logging
+from flask import Flask, request, jsonify
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, ContextTypes, CommandHandler
+from os import getenv
 
-import flask
-import telegram
+def gratztop(bot: Bot, update: Update):
+    bot.send_message(chat_id=update.effective_chat.id, text="gratz top")
 
-app = flask.Flask(__name__)
-api = flask.Blueprint("serverless_handler", __name__)
-bot = telegram.Bot(os.environ["TELEGRAM_TOKEN"])
-logger = logging.getLogger(__name__)
+token = str(getenv("TELEGRAM_TOKEN"))
+botApp = Bot(token)
+gratztop_handler = CommandHandler('gratztop', gratztop)
+dispatcher = Dispatcher(botApp, None)
+dispatcher.add_handler(gratztop_handler)
 
-@api.route("/", methods=["POST"])
+app = Flask(__name__)
+
+@app.route("/", methods=["POST"])
 def main():
-    value = flask.request.get_json()
-    logger.info("post: %s", value)
-    return flask.jsonify({"status": "ok"})
+    value = request.get_json()
+    update = Update.de_json(value, botApp)
+    dispatcher.process_update(update)
+    return jsonify({"status": "ok"})
 
-@api.route("/")
+@app.route("/")
 def home():
     return "Hello, world!"
 
-app.register_blueprint(api, url_prefix="/api/main")
+if __name__ == "__main__":
+    app.run()
