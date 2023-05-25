@@ -57,7 +57,7 @@ def getOutput(amount: str):
 
 token = str(getenv("TELEGRAM_TOKEN"))
 botApp = Bot(token)
-chatId = str(getenv("CHAT_ID"))
+closedChatId = str(getenv("CHAT_ID"))
 
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10
@@ -82,7 +82,12 @@ def items_to_html(items) -> str:
     return "\n".join(_list)
 
 def gratztop(update: Update, context):
-    botApp.send_message(chat_id=update.effective_chat.id, text="gratz top")
+    chatId = update.effective_chat.id
+    #if (chatId != closedChatId):
+    #    return
+    sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
+    response = items_to_html(sorted_users)
+    botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="gratz")
