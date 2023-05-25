@@ -188,5 +188,5 @@ def home():
     output = getOutput("10")
     return str(output["funnyText"])
 
-if __name__ == "__main__":
-    app.run()
+# if __name__ == "__main__":
+#     app.run()
