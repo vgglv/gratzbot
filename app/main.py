@@ -36,7 +36,7 @@ def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited:
         "amount": gratzAmount,
         "name": name,
         "token": token,
-        "unlimited": False
+        "unlimited": unlimited
     }
     if not myUser:
         users_ref.child(userId).set(value)
@@ -47,7 +47,7 @@ def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited:
     return users[userId]
 
 def createUser(userId: str, name: str):
-    setUserData(userId, name, 0, 11, False)
+    return setUserData(userId, name, 0, 11, False)
 
 def getOutput(amount: str):
     if amount in outputs:
@@ -93,9 +93,9 @@ def gratz(update: Update, context):
     if (not update.effective_message.reply_to_message):
         return
     sendingUserId = str(update.effective_user.id)
-    sendingUserName = update.effective_user.name
+    sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
-    receivingUserName = update.effective_message.reply_to_message.from_user.name
+    receivingUserName = update.effective_message.reply_to_message.from_user.first_name
     receivingUser = getUser(receivingUserId)
     sendingUser = getUser(sendingUserId)
     if not receivingUser:
@@ -104,7 +104,7 @@ def gratz(update: Update, context):
         sendingUser = createUser(sendingUserId, sendingUserName)
     
     if (sendingUser["token"] <= 0):
-        response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились грацтокены и вы не можете грацевать."
+        response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
         botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
     sendingUserTokens = sendingUser["token"]
@@ -112,34 +112,56 @@ def gratz(update: Update, context):
         sendingUserTokens = sendingUserTokens - 1
 
     receivingUserGratz = receivingUser["amount"] + 1
-    setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserTokens, False)
-    setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"], False)
+    setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserTokens, sendingUser["unlimited"])
+    setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"], receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserGratz} {declensed_gratz(receivingUserGratz)}!\n<b>{sendingUserName}</b>, у вас {sendingUserTokens} GZ."
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
     output = getOutput(str(receivingUserGratz))
     if output:
         if (output["amount"] > 0):
-            setUserData(sendingUserId, sendingUserName, sendingUser["amount"] + output["amount"], sendingUserTokens, output["unlimitedFunny"])
+            setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"] + output["amount"], output["unlimitedFunny"])
         botApp.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
 
 
 def gratzstats(update: Update, context):
     userId = str(update.effective_user.id)
-    userName = update.effective_user.name
-    tokenAmount = 11
-    gratzAmount = 0
+    userName = update.effective_user.first_name
     myUser = getUser(userId)
     if not myUser:
-        createUser(userId, userName)
-    else:
-        tokenAmount = myUser["token"]
-        gratzAmount = myUser["amount"]
+        myUser = createUser(userId, userName)
+    tokenAmount = myUser["token"]
+    gratzAmount = myUser["amount"]
     response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def givetoken(update: Update, context):
-    botApp.send_message(chat_id=update.effective_chat.id, text="givetoken")
+    if (not update.effective_message.reply_to_message):
+        return
+    sendingUserId = str(update.effective_user.id)
+    sendingUserName = update.effective_user.first_name
+    receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
+    receivingUserName = update.effective_message.reply_to_message.from_user.first_name
+    receivingUser = getUser(receivingUserId)
+    sendingUser = getUser(sendingUserId)
+    if not receivingUser:
+        print("user not exist")
+        receivingUser = createUser(receivingUserId, receivingUserName)
+        print(receivingUser["amount"])
+    if not sendingUser:
+        sendingUser = createUser(sendingUserId, sendingUserName)
+
+    if (sendingUser["token"] <= 0):
+        response = f"<b>{sendingUserName}</b>, к сожалению, у вас закончились GZ."
+        botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+    receivingUserToken = receivingUser["token"] + 1
+    sendingUserToken = sendingUser["token"] - 1
+    print(receivingUser["amount"])
+    setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
+    setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
+    response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
+    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 gratztop_handler = CommandHandler('top', gratztop)
 gratz_handler = CommandHandler('gratz', gratz)
