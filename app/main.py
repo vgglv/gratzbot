@@ -110,10 +110,10 @@ def gratzstats(update: Update, context):
 def givetoken(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="givetoken")
 
-gratztop_handler = CommandHandler('gratztop', gratztop)
+gratztop_handler = CommandHandler('top', gratztop)
 gratz_handler = CommandHandler('gratz', gratz)
-gratzstats_handler = CommandHandler('gratzstats', gratzstats)
-givetoken_handler = CommandHandler('givetoken', givetoken)
+gratzstats_handler = CommandHandler('stats', gratzstats)
+givetoken_handler = CommandHandler('give', givetoken)
 
 dispatcher = Dispatcher(botApp, None)
 dispatcher.add_handler(gratztop_handler)
