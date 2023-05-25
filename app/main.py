@@ -145,9 +145,7 @@ def givetoken(update: Update, context):
     receivingUser = getUser(receivingUserId)
     sendingUser = getUser(sendingUserId)
     if not receivingUser:
-        print("user not exist")
         receivingUser = createUser(receivingUserId, receivingUserName)
-        print(receivingUser["amount"])
     if not sendingUser:
         sendingUser = createUser(sendingUserId, sendingUserName)
 
@@ -157,7 +155,6 @@ def givetoken(update: Update, context):
         return
     receivingUserToken = receivingUser["token"] + 1
     sendingUserToken = sendingUser["token"] - 1
-    print(receivingUser["amount"])
     setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
     setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
