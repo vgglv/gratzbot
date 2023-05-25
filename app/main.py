@@ -32,23 +32,22 @@ def getUser(userId: str):
 
 def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited: bool):
     myUser = getUser(userId)
+    value = {
+        "amount": gratzAmount,
+        "name": name,
+        "token": token,
+        "unlimited": False
+    }
     if not myUser:
-        users_ref.child(userId).set({
-            "amount": gratzAmount,
-            "name": name,
-            "token": token,
-            "unlimited": False
-        })
+        users_ref.child(userId).set(value)
+        users[userId] = value
     else:
-        users_ref.child(userId).update({
-            "amount": gratzAmount,
-            "name": name,
-            "token": token,
-            "unlimited": False
-        })
+        users_ref.child(userId).update(value)
+
+    return users[userId]
 
 def createUser(userId: str, name: str):
-    setUserData(userId, name, 0, 10, False)
+    setUserData(userId, name, 0, 11, False)
 
 def getOutput(amount: str):
     if amount in outputs:
@@ -56,9 +55,9 @@ def getOutput(amount: str):
     else:
         return None
 
-token = str(getenv("TELEGRAM_TOKEN"))
+token = getenv("TELEGRAM_TOKEN")
 botApp = Bot(token)
-closedChatId = str(getenv("CHAT_ID"))
+closedChatId = getenv("CHAT_ID")
 
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10
@@ -91,12 +90,44 @@ def gratztop(update: Update, context):
     botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
-    botApp.send_message(chat_id=update.effective_chat.id, text="gratz")
+    if (not update.effective_message.reply_to_message):
+        return
+    sendingUserId = str(update.effective_user.id)
+    sendingUserName = update.effective_user.name
+    receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
+    receivingUserName = update.effective_message.reply_to_message.from_user.name
+    receivingUser = getUser(receivingUserId)
+    sendingUser = getUser(sendingUserId)
+    if not receivingUser:
+        receivingUser = createUser(receivingUserId, receivingUserName)
+    if not sendingUser:
+        sendingUser = createUser(sendingUserId, sendingUserName)
+    
+    if (sendingUser["token"] <= 0):
+        response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились грацтокены и вы не можете грацевать."
+        botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+    sendingUserTokens = sendingUser["token"]
+    if (not sendingUser["unlimited"]):
+        sendingUserTokens = sendingUserTokens - 1
+
+    receivingUserGratz = receivingUser["amount"] + 1
+    setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserTokens, False)
+    setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"], False)
+    response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserGratz} {declensed_gratz(receivingUserGratz)}!\n<b>{sendingUserName}</b>, у вас {sendingUserTokens} GZ."
+    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+    output = getOutput(str(receivingUserGratz))
+    if output:
+        if (output["amount"] > 0):
+            setUserData(sendingUserId, sendingUserName, sendingUser["amount"] + output["amount"], sendingUserTokens, output["unlimitedFunny"])
+        botApp.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
+
 
 def gratzstats(update: Update, context):
     userId = str(update.effective_user.id)
     userName = update.effective_user.name
-    tokenAmount = 10
+    tokenAmount = 11
     gratzAmount = 0
     myUser = getUser(userId)
     if not myUser:
