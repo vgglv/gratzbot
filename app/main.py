@@ -5,7 +5,12 @@ from telegram.ext import Dispatcher, CommandHandler
 import firebase_admin
 from firebase_admin import db
 
-cred = firebase_admin.credentials.Certificate(str(getenv("FIREBASE_SERVICE_ACCOUNT_KEY")))
+cred = firebase_admin.credentials.Certificate({
+    "client_email": getenv("FIREBASE_CLIENT_EMAIL"),
+    "private_key": getenv("FIREBASE_PRIVATE_KEY"),
+    "project_id": getenv("FIREBASE_PROJECT_ID")
+})
+print('sucess')
 default_app = firebase_admin.initialize_app(cred, {'databaseURL': str(getenv("db_url"))})
 users_ref = db.reference("/Users/")
 outputs_ref = db.reference("/Outputs/")
