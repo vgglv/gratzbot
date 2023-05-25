@@ -94,7 +94,7 @@ def gratz(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="gratz")
 
 def gratzstats(update: Update, context):
-    userId = update.effective_user.id
+    userId = str(update.effective_user.id)
     userName = update.effective_user.name
     tokenAmount = 10
     gratzAmount = 0
