@@ -30,12 +30,11 @@ def getUser(userId: str):
     else:
         return None
 
-def setUserData(userId: str, name: str, gratzAmount: int, firstTime: bool, token: int, unlimited: bool):
+def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited: bool):
     myUser = getUser(userId)
     if not myUser:
         users_ref.child(userId).set({
             "amount": gratzAmount,
-            "firstTime": firstTime,
             "name": name,
             "token": token,
             "unlimited": False
@@ -43,11 +42,13 @@ def setUserData(userId: str, name: str, gratzAmount: int, firstTime: bool, token
     else:
         users_ref.child(userId).update({
             "amount": gratzAmount,
-            "firstTime": firstTime,
             "name": name,
             "token": token,
             "unlimited": False
         })
+
+def createUser(userId: str, name: str):
+    setUserData(userId, name, 0, 10, False)
 
 def getOutput(amount: str):
     if amount in outputs:
@@ -93,7 +94,18 @@ def gratz(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="gratz")
 
 def gratzstats(update: Update, context):
-    botApp.send_message(chat_id=update.effective_chat.id, text="gratzstats")
+    userId = update.effective_user.id
+    userName = update.effective_user.name
+    tokenAmount = 10
+    gratzAmount = 0
+    myUser = getUser(userId)
+    if not myUser:
+        createUser(userId, userName)
+    else:
+        tokenAmount = myUser["token"]
+        gratzAmount = myUser["amount"]
+    response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
+    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def givetoken(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="givetoken")
