@@ -76,10 +76,10 @@ def items_to_html(items) -> str:
     item: dict
     for index, item in enumerate(items):
         place = index + 1
-        name = item.get("name", "[ДАННЫЕ СКРЫТЫ]")
-        amount = item.get("amount", 0)
-        token = item.get("token", 0)
-        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} {declensed_token(token)}")
+        name = users[item].get("name", "[ДАННЫЕ СКРЫТЫ]")
+        amount = users[item].get("amount", 0)
+        token = users[item].get("token", 0)
+        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} GZ!")
     return "\n".join(_list)
 
 def gratztop(update: Update, context):
