@@ -4,14 +4,21 @@ from telegram import Update, Bot
 from telegram.ext import Dispatcher, CommandHandler
 import firebase_admin
 from firebase_admin import db
+import base64
+
+private_key_encoded = getenv("FIREBASE_PRIVATE_KEY")
+private_key_encoded_bytes = private_key_encoded.encode('ascii')
+private_key_decoded_bytes = base64.b64decode(private_key_encoded_bytes)
+private_key_string = private_key_decoded_bytes.decode('ascii')
 
 cred = firebase_admin.credentials.Certificate({
+    "type": "service_account",
+    "project_id": getenv("FIREBASE_PROJECT_ID"),
     "client_email": getenv("FIREBASE_CLIENT_EMAIL"),
-    "private_key": getenv("FIREBASE_PRIVATE_KEY"),
-    "project_id": getenv("FIREBASE_PROJECT_ID")
+    "private_key": private_key_string,
+    "token_uri": getenv("FIREBASE_TOKEN_URI")
 })
-print('sucess')
-default_app = firebase_admin.initialize_app(cred, {'databaseURL': str(getenv("db_url"))})
+default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
 users_ref = db.reference("/Users/")
 outputs_ref = db.reference("/Outputs/")
 users = users_ref.get()
