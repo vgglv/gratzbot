@@ -84,14 +84,16 @@ def items_to_html(items) -> str:
 
 def gratztop(update: Update, context):
     chatId = update.effective_chat.id
-    #if (chatId != closedChatId):
-    #    return
+    if (chatId != closedChatId):
+       return
     sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
     response = items_to_html(sorted_users)
     botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
     if (not update.effective_message.reply_to_message):
+        return
+    if (update.effective_chat.id != closedChatId):
         return
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
@@ -126,6 +128,8 @@ def gratz(update: Update, context):
 
 
 def gratzstats(update: Update, context):
+    if (update.effective_chat.id != closedChatId):
+        return
     userId = str(update.effective_user.id)
     userName = update.effective_user.first_name
     myUser = getUser(userId)
@@ -138,6 +142,8 @@ def gratzstats(update: Update, context):
 
 def givetoken(update: Update, context):
     if (not update.effective_message.reply_to_message):
+        return
+    if (update.effective_chat.id != closedChatId):
         return
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
