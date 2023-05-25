@@ -40,9 +40,10 @@ def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited:
     }
     if not myUser:
         users_ref.child(userId).set(value)
-        users[userId] = value
     else:
         users_ref.child(userId).update(value)
+    
+    users[userId] = value
 
     return users[userId]
 
@@ -188,5 +189,5 @@ def home():
     output = getOutput("10")
     return str(output["funnyText"])
 
-# if __name__ == "__main__":
-#     app.run()
+if __name__ == "__main__":
+    app.run()
