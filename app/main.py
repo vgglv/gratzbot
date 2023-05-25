@@ -105,7 +105,8 @@ def main():
 
 @app.route("/")
 def home():
-    return getOutput("10")
+    output = getOutput("10")
+    return str(output["funnyText"])
 
 if __name__ == "__main__":
     app.run()
