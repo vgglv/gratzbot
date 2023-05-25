@@ -2,10 +2,71 @@ from flask import Flask, request, jsonify
 from os import getenv
 from telegram import Update, Bot
 from telegram.ext import Dispatcher, CommandHandler
+import firebase_admin
+from firebase_admin import db
+
+default_app = firebase_admin.initialize_app(str(getenv("FIREBASE_SERVICE_ACCOUNT_KEY")), {'databaseURL': str(getenv("db_url"))})
+users_ref = db.reference("/Users/")
+outputs_ref = db.reference("/Outputs/")
+users = users_ref.get()
+outputs = outputs_ref.get()
+
+def getUser(userId: str):
+    if userId in users:
+        return users[userId]
+    else:
+        return None
+
+def setUserData(userId: str, name: str, gratzAmount: int, firstTime: bool, token: int, unlimited: bool):
+    myUser = getUser(userId)
+    if not myUser:
+        users_ref.child(userId).set({
+            "amount": gratzAmount,
+            "firstTime": firstTime,
+            "name": name,
+            "token": token,
+            "unlimited": False
+        })
+    else:
+        users_ref.child(userId).update({
+            "amount": gratzAmount,
+            "firstTime": firstTime,
+            "name": name,
+            "token": token,
+            "unlimited": False
+        })
+
+def getOutput(amount: str):
+    if amount in outputs:
+        return outputs[amount]
+    else:
+        return None
 
 token = str(getenv("TELEGRAM_TOKEN"))
 botApp = Bot(token)
 chatId = str(getenv("CHAT_ID"))
+
+def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
+    dig_last = number % 10
+    return (
+        (number in range(5, 20)) and nominative_plural or
+        (1 in (number, dig_last)) and nominative_singular or
+        ({number, dig_last} & {2, 3, 4}) and genetive_singular or nominative_plural
+    )
+
+def declensed_gratz(n: int) -> str:
+    return numeral_noun_declension(n, 'грац', 'граца', 'грацей')
+
+def items_to_html(items) -> str:
+    _list = []
+    item: dict
+    for index, item in enumerate(items):
+        place = index + 1
+        name = item.get("name", "[ДАННЫЕ СКРЫТЫ]")
+        amount = item.get("amount", 0)
+        token = item.get("token", 0)
+        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} {declensed_token(token)}")
+    return "\n".join(_list)
 
 def gratztop(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text="gratz top")
@@ -34,7 +95,6 @@ def process(value):
     update = Update.de_json(value, botApp)
     dispatcher.process_update(update)
 
-    
 app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
@@ -45,7 +105,7 @@ def main():
 
 @app.route("/")
 def home():
-    return "Hello, world!"
+    return getOutput("10")
 
 if __name__ == "__main__":
     app.run()
