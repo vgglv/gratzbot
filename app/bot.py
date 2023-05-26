@@ -30,18 +30,22 @@ def items_to_html(items) -> str:
     return "\n".join(_list)
 
 def gratztop(update: Update, context):
+    print("top was called")
     chatId = update.effective_chat.id
     if (chatId != closedChatId):
-       return
+        print("top returns from method, since chatId is restricted")
+        return
     sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
     response = items_to_html(sorted_users)
-    botApp = Bot(token)
     botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
+    print("gz was called")
     if (not update.effective_message.reply_to_message):
+        print("returning from gz, since message was not a reply")
         return
     if (update.effective_chat.id != closedChatId):
+        print("returning from gz, since chat is restricted")
         return
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
@@ -53,7 +57,6 @@ def gratz(update: Update, context):
         receivingUser = createUser(receivingUserId, receivingUserName)
     if not sendingUser:
         sendingUser = createUser(sendingUserId, sendingUserName)
-    botApp = Bot(token)
     if (sendingUser["token"] <= 0):
         response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
         botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
@@ -76,7 +79,9 @@ def gratz(update: Update, context):
 
 
 def gratzstats(update: Update, context):
+    print("stats was called")
     if (update.effective_chat.id != closedChatId):
+        print("returning from stats, since chat is restricted")
         return
     userId = str(update.effective_user.id)
     userName = update.effective_user.first_name
@@ -86,13 +91,15 @@ def gratzstats(update: Update, context):
     tokenAmount = myUser["token"]
     gratzAmount = myUser["amount"]
     response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
-    botApp = Bot(token)
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def givetoken(update: Update, context):
+    print("give was called")
     if (not update.effective_message.reply_to_message):
+        print("returning from give, since message was not a reply")
         return
     if (update.effective_chat.id != closedChatId):
+        print("returning from give, since chat is restricted")
         return
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
@@ -114,20 +121,19 @@ def givetoken(update: Update, context):
     setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
     setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
-    botApp = Bot(token)
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+botApp = Bot(token)
+gratztop_handler = CommandHandler('top', gratztop)
+gratz_handler = CommandHandler('gratz', gratz)
+gratzstats_handler = CommandHandler('stats', gratzstats)
+givetoken_handler = CommandHandler('give', givetoken)
+dispatcher = Dispatcher(botApp, None)
+dispatcher.add_handler(gratztop_handler)
+dispatcher.add_handler(gratz_handler)
+dispatcher.add_handler(gratzstats_handler)
+dispatcher.add_handler(givetoken_handler)
+
 def processInput(value):
-    print("test_log")
-    botApp = Bot(token)
     update = Update.de_json(value, botApp)
-    gratztop_handler = CommandHandler('top', gratztop)
-    gratz_handler = CommandHandler('gratz', gratz)
-    gratzstats_handler = CommandHandler('stats', gratzstats)
-    givetoken_handler = CommandHandler('give', givetoken)
-    dispatcher = Dispatcher(botApp, None)
-    dispatcher.add_handler(gratztop_handler)
-    dispatcher.add_handler(gratz_handler)
-    dispatcher.add_handler(gratzstats_handler)
-    dispatcher.add_handler(givetoken_handler)
     dispatcher.process_update(update)
