@@ -2,7 +2,7 @@
 from telegram import Update, Bot
 from telegram.ext import Dispatcher, CommandHandler
 from os import getenv
-from db import users, getUser, setUserData, createUser, getOutput
+from app.db import users, getUser, setUserData, createUser, getOutput
 
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10

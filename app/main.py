@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from bot import processInput
+from app.bot import processInput
 
 app = Flask(__name__)
 
