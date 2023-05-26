@@ -1,4 +1,4 @@
 .vscode/
 .venv/
 __pycache__
-/api/test.py
+/app/test.py
