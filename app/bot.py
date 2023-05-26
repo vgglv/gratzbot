@@ -5,7 +5,7 @@ from os import getenv
 from app.db import users, getUser, setUserData, createUser, getOutput
 
 token = getenv("TELEGRAM_TOKEN")
-closedChatId = getenv("CHAT_ID")
+closedChatId = int(getenv("CHAT_ID"))
 
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10
