@@ -4,7 +4,7 @@ from app.bot import processInput
 app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
-def webhook():
+def main():
     value = request.get_json()
     processInput(value)
     return jsonify({"status": "ok"})

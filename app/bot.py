@@ -118,7 +118,6 @@ def givetoken(update: Update, context):
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def processInput(value):
-    print("processing value")
     botApp = Bot(token)
     update = Update.de_json(value, botApp)
     gratztop_handler = CommandHandler('top', gratztop)
