@@ -28,7 +28,7 @@ def getUser(userId: str, userName : str):
         return createUser(userId, userName)
 
 def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited: bool):
-    myUser = getUser(userId)
+    myUser = getUser(userId, name)
     value = {
         "amount": gratzAmount,
         "name": name,
