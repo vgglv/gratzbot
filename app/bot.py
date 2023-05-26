@@ -4,6 +4,9 @@ from telegram.ext import Dispatcher, CommandHandler
 from os import getenv
 from app.db import users, getUser, setUserData, createUser, getOutput
 
+token = getenv("TELEGRAM_TOKEN")
+closedChatId = getenv("CHAT_ID")
+
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10
     return (
@@ -32,6 +35,7 @@ def gratztop(update: Update, context):
        return
     sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
     response = items_to_html(sorted_users)
+    botApp = Bot(token)
     botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
@@ -49,7 +53,7 @@ def gratz(update: Update, context):
         receivingUser = createUser(receivingUserId, receivingUserName)
     if not sendingUser:
         sendingUser = createUser(sendingUserId, sendingUserName)
-    
+    botApp = Bot(token)
     if (sendingUser["token"] <= 0):
         response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
         botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
@@ -82,6 +86,7 @@ def gratzstats(update: Update, context):
     tokenAmount = myUser["token"]
     gratzAmount = myUser["amount"]
     response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
+    botApp = Bot(token)
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def givetoken(update: Update, context):
@@ -109,23 +114,19 @@ def givetoken(update: Update, context):
     setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
     setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
+    botApp = Bot(token)
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-gratztop_handler = CommandHandler('top', gratztop)
-gratz_handler = CommandHandler('gratz', gratz)
-gratzstats_handler = CommandHandler('stats', gratzstats)
-givetoken_handler = CommandHandler('give', givetoken)
-
-token = getenv("TELEGRAM_TOKEN")
-closedChatId = getenv("CHAT_ID")
-botApp = Bot(token)
-
-dispatcher = Dispatcher(botApp, None)
-dispatcher.add_handler(gratztop_handler)
-dispatcher.add_handler(gratz_handler)
-dispatcher.add_handler(gratzstats_handler)
-dispatcher.add_handler(givetoken_handler)
-
 def processInput(value):
+    botApp = Bot(token)
     update = Update.de_json(value, botApp)
+    gratztop_handler = CommandHandler('top', gratztop)
+    gratz_handler = CommandHandler('gratz', gratz)
+    gratzstats_handler = CommandHandler('stats', gratzstats)
+    givetoken_handler = CommandHandler('give', givetoken)
+    dispatcher = Dispatcher(botApp, None)
+    dispatcher.add_handler(gratztop_handler)
+    dispatcher.add_handler(gratz_handler)
+    dispatcher.add_handler(gratzstats_handler)
+    dispatcher.add_handler(givetoken_handler)
     dispatcher.process_update(update)
