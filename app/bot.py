@@ -51,8 +51,8 @@ def gratz(update: Update, context):
     sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
     receivingUserName = update.effective_message.reply_to_message.from_user.first_name
-    receivingUser = getUser(receivingUserId)
-    sendingUser = getUser(sendingUserId)
+    receivingUser = getUser(receivingUserId, receivingUserName)
+    sendingUser = getUser(sendingUserId, sendingUserName)
     if not receivingUser:
         receivingUser = createUser(receivingUserId, receivingUserName)
     if not sendingUser:
@@ -85,7 +85,7 @@ def gratzstats(update: Update, context):
         return
     userId = str(update.effective_user.id)
     userName = update.effective_user.first_name
-    myUser = getUser(userId)
+    myUser = getUser(userId, userName)
     if not myUser:
         myUser = createUser(userId, userName)
     tokenAmount = myUser["token"]
@@ -105,8 +105,8 @@ def givetoken(update: Update, context):
     sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
     receivingUserName = update.effective_message.reply_to_message.from_user.first_name
-    receivingUser = getUser(receivingUserId)
-    sendingUser = getUser(sendingUserId)
+    receivingUser = getUser(receivingUserId, receivingUserName)
+    sendingUser = getUser(sendingUserId, sendingUserName)
     if not receivingUser:
         receivingUser = createUser(receivingUserId, receivingUserName)
     if not sendingUser:
