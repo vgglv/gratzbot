@@ -1,33 +1,14 @@
 
 from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler
+from telegram.ext import Dispatcher, CommandHandler, CallbackContext
 from os import getenv
+#from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
+from app.utils import items_to_html, declensed_gratz
+from app.ai import generate
 
 token = getenv("TELEGRAM_TOKEN")
 closedChatId = int(getenv("CHAT_ID"))
-
-def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
-    dig_last = number % 10
-    return (
-        (number in range(5, 20)) and nominative_plural or
-        (1 in (number, dig_last)) and nominative_singular or
-        ({number, dig_last} & {2, 3, 4}) and genetive_singular or nominative_plural
-    )
-
-def declensed_gratz(n: int) -> str:
-    return numeral_noun_declension(n, 'грац', 'граца', 'грацей')
-
-def items_to_html(items, users) -> str:
-    _list = []
-    item: dict
-    for index, item in enumerate(items):
-        place = index + 1
-        name = users[item].get("name", "[ДАННЫЕ СКРЫТЫ]")
-        amount = users[item].get("amount", 0)
-        token = users[item].get("token", 0)
-        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} GZ!")
-    return "\n".join(_list)
 
 def gratztop(update: Update, context):
     print("top was called")
@@ -92,9 +73,9 @@ def gratzstats(update: Update, context):
     tokenAmount = myUser["token"]
     gratzAmount = myUser["amount"]
     response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
-    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+    context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-def givetoken(update: Update, context):
+def givetoken(update: Update, context: CallbackContext):
     print("give was called")
     if (not update.effective_message.reply_to_message):
         print("returning from give, since message was not a reply")
@@ -124,16 +105,31 @@ def givetoken(update: Update, context):
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
     botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+def chat(update: Update, context: CallbackContext):
+    print('received prompt command')
+    prompt = "".join(context.args)
+    if (not prompt):
+        print('prompt was none, returning')
+        return
+    answer = generate(prompt)
+    if not answer:
+        print('prompt was bad, returning...')
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Произошла ошибка, повторите через некоторое время.")
+        return
+    context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown')
+
 botApp = Bot(token)
 gratztop_handler = CommandHandler('top', gratztop)
 gratz_handler = CommandHandler('gratz', gratz)
 gratzstats_handler = CommandHandler('stats', gratzstats)
 givetoken_handler = CommandHandler('give', givetoken)
+chat_handler = CommandHandler('chat', chat)
 dispatcher = Dispatcher(botApp, None)
 dispatcher.add_handler(gratztop_handler)
 dispatcher.add_handler(gratz_handler)
 dispatcher.add_handler(gratzstats_handler)
 dispatcher.add_handler(givetoken_handler)
+dispatcher.add_handler(chat_handler)
 
 def processInput(value):
     update = Update.de_json(value, botApp)
