@@ -2,7 +2,6 @@
 from telegram import Update, Bot
 from telegram.ext import Dispatcher, CommandHandler, CallbackContext
 from os import getenv
-#from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.utils import items_to_html, declensed_gratz
 from app.ai import generate

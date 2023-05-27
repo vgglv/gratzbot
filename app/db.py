@@ -54,3 +54,9 @@ def getOutput(amount: str):
 
 def getAllUsers():
     return db.reference("/Users/").get()
+
+def addPrompt(prompt):
+    db.reference("/Prompts/").push(prompt)
+
+def getPrompts():
+    return db.reference("/Prompts/").get()
