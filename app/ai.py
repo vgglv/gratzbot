@@ -11,8 +11,9 @@ def generate(prompt:str) -> str:
         {"role": "user", "content": prompt}
     ]
     prompts = getPrompts()
-    for prompt in prompts:
-        _messages.append({"role": "user", "content": {prompt}})
+    if prompts:
+        for prompt in prompts:
+            _messages.append({"role": "user", "content": {prompt}})
     try:
         chat_completion = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=_messages, request_timeout=9.0)
     except:
