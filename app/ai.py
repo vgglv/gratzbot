@@ -10,14 +10,14 @@ def generate(prompt:str) -> str:
         {"role": "system", "content": getenv("SYSTEM_PROMPT")},
         {"role": "user", "content": prompt}
     ]
+    addPrompt(chat_completion.choices[0].message.content)
     prompts = getPrompts()
     if prompts:
-        for prompt in prompts:
-            _messages.append({"role": "user", "content": {prompt}})
+        for key, _prompt in prompts:
+            _messages.append({"role": "user", "content": {_prompt[key]}})
     try:
         chat_completion = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=_messages, request_timeout=9.0)
     except:
         print('error generating prompt')
         return None
-    addPrompt(chat_completion.choices[0].message.content)
     return chat_completion.choices[0].message.content
