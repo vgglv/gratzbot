@@ -16,38 +16,41 @@ cred = firebase_admin.credentials.Certificate({
     "token_uri": getenv("FIREBASE_TOKEN_URI")
 })
 default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
-users_ref = db.reference("/Users/")
-outputs_ref = db.reference("/Outputs/")
-users = users_ref.get()
-outputs = outputs_ref.get()
 
 def getUser(userId: str, userName : str):
-    if userId in users:
-        return users[userId]
-    else:
-        return createUser(userId, userName)
+    user = db.reference(f"/Users/{userId}").get()
+    print(f"getting user {userId}, value: {user}")
+    if not user:
+        print("user not exist, creating user...")
+        user = createUser(userId, userName)
+        print(f"created user: {user}")
+    return user
 
 def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited: bool):
-    myUser = getUser(userId, name)
     value = {
         "amount": gratzAmount,
         "name": name,
         "token": token,
         "unlimited": unlimited
     }
-    if not myUser:
-        users_ref.child(userId).set(value)
-    else:
-        users_ref.child(userId).update(value)
-    
-    users[userId] = value
-    return users[userId]
+    db.reference(f"/Users/{userId}").update(value)
+    return value
 
 def createUser(userId: str, name: str):
-    return setUserData(userId, name, 0, 11, False)
+    userData = {
+        "amount": 0,
+        "name": name,
+        "token": 11,
+        "unlimited": False
+    }
+    db.reference("/Users/").child(userId).set(userData)
+    print(f"creating user {userId} with {userData}")
+    return userData
 
 def getOutput(amount: str):
-    if amount in outputs:
-        return outputs[amount]
-    else:
-        return None
+    output = db.reference(f"/Outputs/{amount}").get()
+    print(f"getting output {output}")
+    return output
+
+def getAllUsers():
+    return db.reference("/Users/").get()

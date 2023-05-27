@@ -2,7 +2,7 @@
 from telegram import Update, Bot
 from telegram.ext import Dispatcher, CommandHandler
 from os import getenv
-from app.db import users, getUser, setUserData, createUser, getOutput
+from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 
 token = getenv("TELEGRAM_TOKEN")
 closedChatId = int(getenv("CHAT_ID"))
@@ -18,7 +18,7 @@ def numeral_noun_declension(number, nominative_singular, genetive_singular, nomi
 def declensed_gratz(n: int) -> str:
     return numeral_noun_declension(n, 'грац', 'граца', 'грацей')
 
-def items_to_html(items) -> str:
+def items_to_html(items, users) -> str:
     _list = []
     item: dict
     for index, item in enumerate(items):
@@ -35,8 +35,9 @@ def gratztop(update: Update, context):
     if (chatId != closedChatId):
         print("top returns from method, since chatId is restricted")
         return
+    users = getAllUsers()
     sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
-    response = items_to_html(sorted_users)
+    response = items_to_html(sorted_users, users)
     botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
 def gratz(update: Update, context):
