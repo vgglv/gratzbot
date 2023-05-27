@@ -10,7 +10,7 @@ def generate(prompt:str) -> str:
         {"role": "system", "content": getenv("SYSTEM_PROMPT")},
         {"role": "user", "content": prompt}
     ]
-    addPrompt(chat_completion.choices[0].message.content)
+    addPrompt(prompt)
     prompts = getPrompts()
     if prompts:
         for key, _prompt in prompts:
