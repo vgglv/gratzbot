@@ -1,31 +1,27 @@
-
-from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler, CallbackContext
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 from os import getenv
 from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.utils import items_to_html, declensed_gratz
 from app.ai import generate
 
-token = getenv("TELEGRAM_TOKEN")
-closedChatId = int(getenv("CHAT_ID"))
-
-def gratztop(update: Update, context):
+async def gratztop(update: Update, context):
     print("top was called")
     chatId = update.effective_chat.id
-    if (chatId != closedChatId):
+    if (chatId != int(getenv("CHAT_ID"))):
         print("top returns from method, since chatId is restricted")
         return
     users = getAllUsers()
     sorted_users = sorted(users.keys(), key=lambda x: (users[x]['amount'], users[x]['token']), reverse=True)
     response = items_to_html(sorted_users, users)
-    botApp.send_message(chat_id=chatId, text=response, parse_mode="HTML")
+    await context.bot.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
-def gratz(update: Update, context):
+async def gratz(update: Update, context):
     print("gz was called")
     if (not update.effective_message.reply_to_message):
         print("returning from gz, since message was not a reply")
         return
-    if (update.effective_chat.id != closedChatId):
+    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from gz, since chat is restricted")
         return
     sendingUserId = str(update.effective_user.id)
@@ -40,7 +36,7 @@ def gratz(update: Update, context):
         sendingUser = createUser(sendingUserId, sendingUserName)
     if (sendingUser["token"] <= 0):
         response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
-        botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
     sendingUserTokens = sendingUser["token"]
     if (not sendingUser["unlimited"]):
@@ -50,18 +46,18 @@ def gratz(update: Update, context):
     setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserTokens, sendingUser["unlimited"])
     setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"], receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserGratz} {declensed_gratz(receivingUserGratz)}!\n<b>{sendingUserName}</b>, у вас {sendingUserTokens} GZ."
-    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
     output = getOutput(str(receivingUserGratz))
     if output:
         if (output["amount"] > 0):
             setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"] + output["amount"], output["unlimitedFunny"])
-        botApp.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
 
 
-def gratzstats(update: Update, context):
+async def gratzstats(update: Update, context):
     print("stats was called")
-    if (update.effective_chat.id != closedChatId):
+    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from stats, since chat is restricted")
         return
     userId = str(update.effective_user.id)
@@ -72,14 +68,14 @@ def gratzstats(update: Update, context):
     tokenAmount = myUser["token"]
     gratzAmount = myUser["amount"]
     response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
-    context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-def givetoken(update: Update, context: CallbackContext):
+async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("give was called")
     if (not update.effective_message.reply_to_message):
         print("returning from give, since message was not a reply")
         return
-    if (update.effective_chat.id != closedChatId):
+    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from give, since chat is restricted")
         return
     sendingUserId = str(update.effective_user.id)
@@ -95,41 +91,61 @@ def givetoken(update: Update, context: CallbackContext):
 
     if (sendingUser["token"] <= 0):
         response = f"<b>{sendingUserName}</b>, к сожалению, у вас закончились GZ."
-        botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
     receivingUserToken = receivingUser["token"] + 1
     sendingUserToken = sendingUser["token"] - 1
     setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
     setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
-    botApp.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-def chat(update: Update, context: CallbackContext):
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(update.to_json())
     print('received prompt command')
     prompt = "".join(context.args)
     if (not prompt):
         print('prompt was none, returning')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы ничего не написали! Пожалуйста, повторите заново.")
         return
     answer = generate(prompt)
     if not answer:
         print('prompt was bad, returning...')
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Произошла ошибка, повторите через некоторое время.")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Not telling")
         return
-    context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown')
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown')
 
-botApp = Bot(token)
-gratztop_handler = CommandHandler('top', gratztop)
-gratz_handler = CommandHandler('gratz', gratz)
-gratzstats_handler = CommandHandler('stats', gratzstats)
-givetoken_handler = CommandHandler('give', givetoken)
-chat_handler = CommandHandler('chat', chat)
-dispatcher = Dispatcher(botApp, None)
-dispatcher.add_handler(gratztop_handler)
-dispatcher.add_handler(gratz_handler)
-dispatcher.add_handler(gratzstats_handler)
-dispatcher.add_handler(givetoken_handler)
-dispatcher.add_handler(chat_handler)
+async def runTelegramApp():
+    print('running telegram app...')
+    application = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
+    gratztop_handler = CommandHandler('top', gratztop)
+    gratz_handler = CommandHandler('gratz', gratz)
+    gratzstats_handler = CommandHandler('stats', gratzstats)
+    givetoken_handler = CommandHandler('give', givetoken)
+    chat_handler = CommandHandler('chat', chat)
+    application.add_handler(gratztop_handler)
+    application.add_handler(gratz_handler)
+    application.add_handler(gratzstats_handler)
+    application.add_handler(givetoken_handler)
+    application.add_handler(chat_handler)
+    await application.initialize()
+    return application
 
-def processInput(value):
-    update = Update.de_json(value, botApp)
-    dispatcher.process_update(update)
+async def processInput(value):
+    application = await runTelegramApp()
+    update = Update.de_json(value, application.bot)
+    await application.process_update(update)
+
+if __name__ == '__main__':
+    application = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
+    gratztop_handler = CommandHandler('top', gratztop)
+    gratz_handler = CommandHandler('gratz', gratz)
+    gratzstats_handler = CommandHandler('stats', gratzstats)
+    givetoken_handler = CommandHandler('give', givetoken)
+    chat_handler = CommandHandler('chat', chat)
+    application.add_handler(gratztop_handler)
+    application.add_handler(gratz_handler)
+    application.add_handler(gratzstats_handler)
+    application.add_handler(givetoken_handler)
+    application.add_handler(chat_handler)
+    application.run_polling()

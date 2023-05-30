@@ -1,12 +1,13 @@
 from flask import Flask, request, jsonify
 from app.bot import processInput
+import asyncio
 
 app = Flask(__name__)
 
 @app.route("/", methods=["POST"])
 def main():
     value = request.get_json()
-    processInput(value)
+    asyncio.run(processInput(value))
     return jsonify({"status": "ok"})
 
 @app.route("/")
