@@ -3,7 +3,6 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 from os import getenv
 from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.utils import items_to_html, declensed_gratz
-from app.ai import generate
 
 async def gratztop(update: Update, context):
     print("top was called")
@@ -100,21 +99,6 @@ async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(update.to_json())
-    print('received prompt command')
-    prompt = "".join(context.args)
-    if (not prompt):
-        print('prompt was none, returning')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы ничего не написали! Пожалуйста, повторите заново.", reply_to_message_id=update.effective_message.id)
-        return
-    answer = generate(prompt)
-    if not answer:
-        print('prompt was bad, returning...')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Not telling", reply_to_message_id=update.effective_message.id)
-        return
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown', reply_to_message_id=update.effective_message.id)
-
 async def runTelegramApp():
     print('running telegram app...')
     application = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
@@ -122,12 +106,10 @@ async def runTelegramApp():
     gratz_handler = CommandHandler('gratz', gratz)
     gratzstats_handler = CommandHandler('stats', gratzstats)
     givetoken_handler = CommandHandler('give', givetoken)
-    chat_handler = CommandHandler('chat', chat)
     application.add_handler(gratztop_handler)
     application.add_handler(gratz_handler)
     application.add_handler(gratzstats_handler)
     application.add_handler(givetoken_handler)
-    application.add_handler(chat_handler)
     await application.initialize()
     return application
 
@@ -142,10 +124,8 @@ if __name__ == '__main__':
     gratz_handler = CommandHandler('gratz', gratz)
     gratzstats_handler = CommandHandler('stats', gratzstats)
     givetoken_handler = CommandHandler('give', givetoken)
-    chat_handler = CommandHandler('chat', chat)
     application.add_handler(gratztop_handler)
     application.add_handler(gratz_handler)
     application.add_handler(gratzstats_handler)
     application.add_handler(givetoken_handler)
-    application.add_handler(chat_handler)
     application.run_polling()
