@@ -106,14 +106,14 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = "".join(context.args)
     if (not prompt):
         print('prompt was none, returning')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы ничего не написали! Пожалуйста, повторите заново.")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы ничего не написали! Пожалуйста, повторите заново.", reply_to_message_id=update.effective_message.id)
         return
     answer = generate(prompt)
     if not answer:
         print('prompt was bad, returning...')
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Not telling")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Not telling", reply_to_message_id=update.effective_message.id)
         return
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown')
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer, parse_mode='Markdown', reply_to_message_id=update.effective_message.id)
 
 async def runTelegramApp():
     print('running telegram app...')
