@@ -10,7 +10,7 @@ def generate(prompt:str) -> str:
         {"role": "user", "content": prompt}
     ]
     try:
-        chat_completion = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=_messages, request_timeout=20.0)
+        chat_completion = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=_messages, request_timeout=9.5)
     except:
         print('error generating prompt')
         return None
