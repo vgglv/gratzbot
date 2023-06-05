@@ -127,10 +127,12 @@ async def runTelegramApp():
     gratz_handler = CommandHandler('gratz', gratz)
     gratzstats_handler = CommandHandler('stats', gratzstats)
     givetoken_handler = CommandHandler('give', givetoken)
+    chance_handler = CommandHandler('chance', chance)
     application.add_handler(gratztop_handler)
     application.add_handler(gratz_handler)
     application.add_handler(gratzstats_handler)
     application.add_handler(givetoken_handler)
+    application.add_handler(chance_handler)
     await application.initialize()
     return application
 
