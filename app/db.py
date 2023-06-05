@@ -75,3 +75,6 @@ def getChances():
 
 def setChanceDate(chanceId):
     db.reference("/Chances/lastDate").set(chanceId)
+
+def getOneGZImage() -> str:
+    return str(db.reference("/Give/image").get())

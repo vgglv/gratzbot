@@ -118,7 +118,7 @@ async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.db.setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserToken, sendingUser["unlimited"])
     app.db.setUserData(receivingUserId, receivingUserName, receivingUser["amount"], receivingUserToken, receivingUser["unlimited"])
     response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserToken} GZ!\n<b>{sendingUserName}</b>, у вас {sendingUserToken} GZ."
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=app.db.getOneGZImage(), caption=response, parse_mode="HTML")
 
 async def runTelegramApp():
     print('running telegram app...')
