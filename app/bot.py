@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, CallbackContext
 from os import getenv
 from app.db import getUser, setUserData, createUser, getOutput, getAllUsers
 from app.utils import items_to_html, declensed_gratz
@@ -51,6 +51,8 @@ async def gratz(update: Update, context):
     if output:
         if (output["amount"] > 0):
             setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"] + output["amount"], output["unlimitedFunny"])
+        if ("image" in output):
+            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=str(output["image"]))
         await context.bot.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
 
 
