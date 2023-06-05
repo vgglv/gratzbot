@@ -2,6 +2,7 @@ from os import getenv
 import base64
 import firebase_admin
 from firebase_admin import db
+import random
 
 private_key_encoded = getenv("FIREBASE_PRIVATE_KEY")
 private_key_encoded_bytes = private_key_encoded.encode('ascii')
@@ -54,3 +55,23 @@ def getOutput(amount: str):
 
 def getAllUsers():
     return db.reference("/Users/").get()
+
+def getRandomUserWithZeroTokens():
+    users = db.reference("/Users/").get()
+    zeroTokenUsers = []
+    for key, data in users.items():
+        if data["token"] == 0:
+            data["uid"] =  key
+            zeroTokenUsers.append(data)
+
+    print(zeroTokenUsers)
+    random_user = {}
+    if len(zeroTokenUsers) > 0:
+        random_user = random.choice(zeroTokenUsers)
+    return random_user
+
+def getChances():
+    return db.reference("/Chances/").get()
+
+def setChanceDate(chanceId):
+    db.reference("/Chances/lastDate").set(chanceId)
