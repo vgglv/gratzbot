@@ -45,6 +45,9 @@ async def gratz(update: Update, context):
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
+    if (sendingUserId == receivingUserId):
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="No.", reply_to_message_id=update.effective_message.id)
+        return
     receivingUserName = update.effective_message.reply_to_message.from_user.first_name
     receivingUser = app.db.getUser(receivingUserId, receivingUserName)
     sendingUser = app.db.getUser(sendingUserId, sendingUserName)
