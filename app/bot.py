@@ -4,10 +4,12 @@ from os import getenv
 import app.db
 import app.utils
 import datetime
+import random
 
 async def gratztop(update: Update, context):
     print("top was called")
     chatId = update.effective_chat.id
+    print(chatId)
     if (chatId != int(getenv("CHAT_ID"))):
         print("top returns from method, since chatId is restricted")
         return
@@ -20,19 +22,26 @@ async def chance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from chance, since chat is restricted")
         return
-    user = app.db.getRandomUserWithZeroTokens()
-    chanceData = app.db.getChances()
+    userId = str(update.effective_user.id)
+    user = app.db.getUser(userId, update.effective_user.first_name)
+    if (user["token"] > 0):
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Шанс можно использовать только при нуле.")
+        return
+    chanceWeekDay = app.db.getChanceDate(userId)
     currentWeek = datetime.datetime.today().isocalendar().week
-    if (chanceData["lastDate"] == currentWeek):
+    if (chanceWeekDay == currentWeek):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="NO CHANCE TODAY - вы уже использовали сектор шанс на этой неделе.")
         return
-    if not user:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="NO CHANCE TODAY - ни одного пользователя с 0 кол-вом GZ.")
+    roll = random.randint(1,2)
+    if roll == 1:
+        app.db.setChanceDate(userId, currentWeek)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="К сожалению, вы не получаете +5 GZ. Попробуйте на следующей неделе.")
         return
-    app.db.setUserData(user["uid"], user["name"], user["amount"], user["token"] + 5, user["unlimited"])
-    userName = user["name"]
-    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=str(chanceData["image"]), caption=f"Поздравляем {userName}! Ты получаешь +5 GZ!")
-    app.db.setChanceDate(currentWeek)
+    else:
+        app.db.setUserData(userId, user["name"], user["amount"], user["token"] + 5, user["unlimited"])
+        userName = user["name"]
+        chanceData = app.db.getChances()
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=str(chanceData["image"]), caption=f"Поздравляем {userName}! Ты получаешь +5 GZ!")
 
 async def gratz(update: Update, context):
     print("gz was called")

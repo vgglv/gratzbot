@@ -56,25 +56,20 @@ def getOutput(amount: str):
 def getAllUsers():
     return db.reference("/Users/").get()
 
-def getRandomUserWithZeroTokens():
-    users = db.reference("/Users/").get()
-    zeroTokenUsers = []
-    for key, data in users.items():
-        if data["token"] == 0:
-            data["uid"] =  key
-            zeroTokenUsers.append(data)
-
-    print(zeroTokenUsers)
-    random_user = {}
-    if len(zeroTokenUsers) > 0:
-        random_user = random.choice(zeroTokenUsers)
-    return random_user
-
 def getChances():
     return db.reference("/Chances/").get()
 
-def setChanceDate(chanceId):
-    db.reference("/Chances/lastDate").set(chanceId)
+def setChanceDate(userId, chanceId):
+    db.reference("/Chances/").child(userId).child("lastDate").set(chanceId)
+
+def getChanceDate(userId):
+    date = 0
+    try:
+        date = int(db.reference(f"/Chances/{userId}/lastDate").get())
+    except:
+        print('couldn find reference')
+
+    return date
 
 def getOneGZImage() -> str:
     return str(db.reference("/Give/image").get())
