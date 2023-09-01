@@ -113,6 +113,8 @@ async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
+    if sendingUserId == receivingUserId:
+        return
     receivingUserName = update.effective_message.reply_to_message.from_user.first_name
     receivingUser = app.db.getUser(receivingUserId, receivingUserName)
     sendingUser = app.db.getUser(sendingUserId, sendingUserName)
