@@ -2,7 +2,7 @@ from os import getenv
 import base64
 import firebase_admin
 from firebase_admin import db
-import random
+from datetime import datetime
 
 private_key_encoded = getenv("FIREBASE_PRIVATE_KEY")
 private_key_encoded_bytes = private_key_encoded.encode('ascii')
@@ -27,31 +27,29 @@ def getUser(userId: str, userName : str):
         print(f"created user: {user}")
     return user
 
-def setUserData(userId: str, name: str, gratzAmount: int, token: int, unlimited: bool):
+def setUserData(userId: str, name: str, gratzAmount: int, token: int, farm: int, saved_date: datetime):
     value = {
         "amount": gratzAmount,
         "name": name,
         "token": token,
-        "unlimited": unlimited
+        "farm": farm,
+        "saved_date": saved_date
     }
     db.reference(f"/Users/{userId}").update(value)
     return value
 
-def createUser(userId: str, name: str):
+def createUser(userId: str, name: str, date: datetime):
+    current_timestamp = datetime.now()
     userData = {
         "amount": 0,
         "name": name,
-        "token": 11,
-        "unlimited": False
+        "token": 5,
+        "farm": 1,
+        "saved_date": current_timestamp
     }
     db.reference("/Users/").child(userId).set(userData)
     print(f"creating user {userId} with {userData}")
     return userData
-
-def getOutput(amount: str):
-    output = db.reference(f"/Outputs/{amount}").get()
-    print(f"getting output {output}")
-    return output
 
 def getAllUsers():
     return db.reference("/Users/").get()
@@ -70,6 +68,3 @@ def getChanceDate(userId):
         print('couldn find reference')
 
     return date
-
-def getOneGZImage() -> str:
-    return str(db.reference("/Give/image").get())

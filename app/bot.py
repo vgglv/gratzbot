@@ -6,7 +6,11 @@ import app.utils
 import datetime
 import random
 
-async def gratztop(update: Update, context):
+def process_user(user_id:str, user_name:str):
+    user = app.db.getUser(userId=user_id, userName=user_name)
+
+
+async def gratztop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("top was called")
     chatId = update.effective_chat.id
     print(chatId)
@@ -43,7 +47,7 @@ async def chance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chanceData = app.db.getChances()
         await context.bot.send_photo(chat_id=update.effective_chat.id, photo=str(chanceData["image"]), caption=f"Поздравляем {userName}! Ты получаешь +5 GZ!")
 
-async def gratz(update: Update, context):
+async def gratz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("gz was called")
     if (not update.effective_message.reply_to_message):
         print("returning from gz, since message was not a reply")
@@ -51,44 +55,45 @@ async def gratz(update: Update, context):
     if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from gz, since chat is restricted")
         return
-    sendingUserId = str(update.effective_user.id)
-    sendingUserName = update.effective_user.first_name
-    receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
-    if (sendingUserId == receivingUserId):
+    sending_user_id = str(update.effective_user.id)
+    receiving_user_id = str(update.effective_message.reply_to_message.from_user.id)
+    if (sending_user_id == receiving_user_id):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="No.", reply_to_message_id=update.effective_message.id)
         return
-    receivingUserName = update.effective_message.reply_to_message.from_user.first_name
-    receivingUser = app.db.getUser(receivingUserId, receivingUserName)
-    sendingUser = app.db.getUser(sendingUserId, sendingUserName)
-    if not receivingUser:
-        receivingUser = app.db.createUser(receivingUserId, receivingUserName)
-    if not sendingUser:
-        sendingUser = app.db.createUser(sendingUserId, sendingUserName)
-    if (sendingUser["token"] <= 0):
-        response = f"<b>{sendingUserName}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
+    sending_user_name = update.effective_user.first_name
+    receiving_user_name = update.effective_message.reply_to_message.from_user.first_name
+    receiving_user = app.db.getUser(receiving_user_id, receiving_user_name)
+    sending_user = app.db.getUser(sending_user_id, sending_user_name)
+    if not receiving_user:
+        receiving_user = app.db.createUser(receiving_user_id, receiving_user_name)
+    if not sending_user:
+        sending_user = app.db.createUser(sending_user_id, sending_user_name)
+    if (sending_user["token"] <= 0):
+        response = f"<b>{sending_user_name}</b>, к сожалению у вас закончились GZ и вы не можете грацевать."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    sendingUserTokens = sendingUser["token"]
-    if (not sendingUser["unlimited"]):
-        sendingUserTokens = sendingUserTokens - 1
-
-    receivingUserGratz = receivingUser["amount"] + 1
-    app.db.setUserData(sendingUserId, sendingUserName, sendingUser["amount"], sendingUserTokens, sendingUser["unlimited"])
-    app.db.setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"], receivingUser["unlimited"])
-    response = f"<b>{receivingUserName}</b>, ты собрал {receivingUserGratz} {app.utils.declensed_gratz(receivingUserGratz)}!\n<b>{sendingUserName}</b>, у вас {sendingUserTokens} GZ."
+    sending_user_token = sending_user["token"] - 1
+    receiving_user_gratz = receiving_user["amount"] + 1
+    app.db.setUserData(
+        userId = sending_user_id,
+        name = sending_user_name,
+        gratzAmount = sending_user["amount"],
+        token = sending_user_token,
+        farm = sending_user["farm"],
+        saved_date = update.effective_message.date
+    )
+    app.db.setUserData(
+        userId = receiving_user_id,
+        name = receiving_user_name,
+        gratzAmount = receiving_user_gratz,
+        token = receiving_user["token"],
+        farm = receiving_user["farm"],
+        saved_date = update.effective_message.date
+    )
+    response = f"<b>{receiving_user_name}</b>, ты собрал {receiving_user_gratz} {app.utils.declensed_gratz(receiving_user_gratz)}!\n<b>{sending_user_name}</b>, у вас {sending_user_token} GZ."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-    output = app.db.getOutput(str(receivingUserGratz))
-    if output:
-        if (output["amount"] > 0):
-            app.db.setUserData(receivingUserId, receivingUserName, receivingUserGratz, receivingUser["token"] + output["amount"], output["unlimitedFunny"])
-        if ("image" in output):
-            await context.bot.send_photo(chat_id=update.effective_chat.id, photo=str(output["image"]), caption=str(output["funnyText"]))
-        else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=output["funnyText"])
-
-async def gratzstats(update: Update, context):
-    print("stats was called")
+async def gratzstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from stats, since chat is restricted")
         return
@@ -99,7 +104,8 @@ async def gratzstats(update: Update, context):
         myUser = app.db.createUser(userId, userName)
     tokenAmount = myUser["token"]
     gratzAmount = myUser["amount"]
-    response = f"<b>{userName}</b>, сейчас у тебя {gratzAmount} {app.utils.declensed_gratz(gratzAmount)} и {tokenAmount} GZ!"
+    farmAmount = myUser["farm"]
+    response = f"<b>{userName}</b>, у вас: \n• {gratzAmount} {app.utils.declensed_gratz(gratzAmount)}; \n• {tokenAmount} GZ; \n• {farmAmount} {app.utils.declensed_farm(farmAmount)};"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -113,6 +119,7 @@ async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sendingUserId = str(update.effective_user.id)
     sendingUserName = update.effective_user.first_name
     receivingUserId = str(update.effective_message.reply_to_message.from_user.id)
+    print(update.effective_message.to_json())
     if sendingUserId == receivingUserId:
         return
     receivingUserName = update.effective_message.reply_to_message.from_user.first_name
