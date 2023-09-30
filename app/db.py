@@ -2,7 +2,8 @@ from os import getenv
 import base64
 import firebase_admin
 from firebase_admin import db
-from datetime import datetime
+from app.user import GUser
+import time
 
 private_key_encoded = getenv("FIREBASE_PRIVATE_KEY")
 private_key_encoded_bytes = private_key_encoded.encode('ascii')
@@ -18,28 +19,37 @@ cred = firebase_admin.credentials.Certificate({
 })
 default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
 
-def getUser(userId: str, userName : str):
-    user = db.reference(f"/Users/{userId}").get()
-    print(f"getting user {userId}, value: {user}")
+def getUser(user_id: str, user_name : str) -> GUser:
+    user = db.reference(f"/Users/{user_id}").get()
+    print(f"getting user {user_id}, value: {user}")
     if not user:
         print("user not exist, creating user...")
-        user = createUser(userId, userName)
+        user = createUser(user_id, user_name)
         print(f"created user: {user}")
-    return user
 
-def setUserData(userId: str, name: str, gratzAmount: int, token: int, farm: int, saved_date: datetime):
+    result = GUser(
+        user_id=user_id,
+        name=user_name,
+        gratz_amount=user["amount"],
+        token=user["token"],
+        farm=user["farm"],
+        saved_date=user["saved_date"]
+    )
+    return result
+
+def updateUserInDatabase(user:GUser) -> None:
     value = {
-        "amount": gratzAmount,
-        "name": name,
-        "token": token,
-        "farm": farm,
-        "saved_date": saved_date
+        "amount": user.getGratzAmount(),
+        "name": user.getName(),
+        "token": user.getToken(),
+        "farm": user.getFarm(),
+        "saved_date": user.getSavedDate()
     }
-    db.reference(f"/Users/{userId}").update(value)
+    db.reference(f"/Users/{user.getUserId()}").update(value)
     return value
 
-def createUser(userId: str, name: str, date: datetime):
-    current_timestamp = datetime.now()
+def createUser(userId: str, name: str) -> dict[str, any]:
+    current_timestamp = int(time.time())
     userData = {
         "amount": 0,
         "name": name,
@@ -48,23 +58,7 @@ def createUser(userId: str, name: str, date: datetime):
         "saved_date": current_timestamp
     }
     db.reference("/Users/").child(userId).set(userData)
-    print(f"creating user {userId} with {userData}")
     return userData
 
 def getAllUsers():
     return db.reference("/Users/").get()
-
-def getChances():
-    return db.reference("/Chances/").get()
-
-def setChanceDate(userId, chanceId):
-    db.reference("/Chances/").child(userId).child("lastDate").set(chanceId)
-
-def getChanceDate(userId):
-    date = 0
-    try:
-        date = int(db.reference(f"/Chances/{userId}/lastDate").get())
-    except:
-        print('couldn find reference')
-
-    return date

@@ -22,12 +22,6 @@ def items_to_html(items, users) -> str:
         name = users[item].get("name", "[ДАННЫЕ СКРЫТЫ]")
         amount = users[item].get("amount", 0)
         token = users[item].get("token", 0)
-        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} GZ!")
+        farm = users[item].get("farm", 1)
+        _list.append(f"{place}. <b>{name}</b> - {amount} {declensed_gratz(amount)}, {token} GZ, {farm} {declensed_farm(farm)}.")
     return "\n".join(_list)
-
-def calculate_tokens(farms_amount, last_date:datetime, current_date:datetime):
-    delta = current_date - last_date
-    days = delta.days
-    if days <= 0:
-        return 0
-    return days * farms_amount
