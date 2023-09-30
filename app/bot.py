@@ -78,6 +78,8 @@ async def givetoken(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     sending_user.decrementToken()
     receiving_user.incrementToken()
+    app.db.updateUserInDatabase(sending_user)
+    app.db.updateUserInDatabase(receiving_user)
 
     response = f"<b>{receiving_user.getName()}</b>, ты собрал {receiving_user.getToken()} GZ!\n<b>{sending_user.getName()}</b>, у вас {sending_user.getToken()} GZ."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
@@ -125,7 +127,6 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if (update.effective_chat.id != int(getenv("CHAT_ID"))):
         print("returning from buy_farm, since chat is restricted")
         return
-    user = app.db.getUser(str(update.effective_user.id), update.effective_user.first_name)
     response = f'FAQ:\nУ каждого пользователя в начале выдается 5 GZ и 1 Ферма.\n1 Ферма плодит в день 1 GZ.\nЧтобы собрать урожай с фермы, используйте команду <b>collect_farm</b>.\nПри вызове команды <b>collect_farm</b> записывается текущее время по серверу, при истечении 1 дня с этого времени вы можете снова собрать урожай.\nИспользуйте команду <b>buy_farm</b> чтобы купить ферму, цена одной фермы: {FARM_PRICE} GZ.\nЧтобы грацануть кого-то, нужно выбрать его сообщение как <i>reply</i> и вызвать команду <b>gratz</b>.\nТакже, вы можете подарить кому-то GZ через команду <b>give</b> и выбрав его сообщение как <i>reply</i>.\n<b>top</b> - выведет доску лидеров, у кого больше всех грацей на данный момент.\n<b>stats</b> - узнать свои статы.\n\nЧемпионы прошлого сезона:\n<b>Emōknight</b>, \n<b>Ｗｈａｌｅｒｉｄｅｒ➑➍</b>, \n<b>Eeevan</b>. \nВ этом сезоне задача набрать 500 грацей. Победителю будет подарен телеграм премиум на 3 месяца.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 

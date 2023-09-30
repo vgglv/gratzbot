@@ -1,5 +1,3 @@
-from datetime import datetime
-
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
     dig_last = number % 10
     return (
