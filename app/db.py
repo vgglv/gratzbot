@@ -27,11 +27,13 @@ def getUser(user_id: str, user_name : str) -> GUser:
         user = createUser(user_id, user_name)
         print(f"created user: {user}")
 
+    if not "gold" in user:
+        user["gold"] = 0
+
     result = GUser(
         user_id=user_id,
         name=user_name,
-        gratz_amount=user["amount"],
-        token=user["token"],
+        gold=user["gold"],
         farm=user["farm"],
         saved_date=user["saved_date"]
     )
@@ -39,9 +41,8 @@ def getUser(user_id: str, user_name : str) -> GUser:
 
 def updateUserInDatabase(user:GUser) -> None:
     value = {
-        "amount": user.getGratzAmount(),
         "name": user.getName(),
-        "token": user.getToken(),
+        "gold": user.getGold(),
         "farm": user.getFarm(),
         "saved_date": user.getSavedDate()
     }
@@ -51,14 +52,22 @@ def updateUserInDatabase(user:GUser) -> None:
 def createUser(userId: str, name: str) -> dict[str, any]:
     current_timestamp = int(time.time())
     userData = {
-        "amount": 0,
         "name": name,
-        "token": 5,
+        "gold": 5,
         "farm": 1,
         "saved_date": current_timestamp
     }
     db.reference("/Users/").child(userId).set(userData)
     return userData
+
+def setUserData(user:GUser) -> None:
+    value = {
+        "name": user.getName(),
+        "gold": user.getGold(),
+        "farm": user.getFarm(),
+        "saved_date": user.getSavedDate()
+    }
+    db.reference(f"/Users/{user.getUserId()}").set(value)
 
 def getAllUsers():
     return db.reference("/Users/").get()
