@@ -1,5 +1,6 @@
 import time
 
+
 class GUser:
     def __init__(self, user_id: str, name: str, gold: int = 5, farm: int = 1, saved_date: int = None) -> None:
         self.user_id = user_id
@@ -11,44 +12,26 @@ class GUser:
         else:
             self.saved_date = saved_date
 
-    def isGoldZero(self) -> bool:
+    def is_gold_zero(self) -> bool:
         return self.gold <= 0
 
-    def incrementGratzAmount(self):
-        self.gratz_amount = self.gratz_amount + 1
-
-    def incrementGold(self):
+    def increment_gold(self):
         self.gold = self.gold + 1
 
-    def decrementGold(self):
+    def decrement_gold(self):
         self.gold = self.gold - 1
 
-    def setUserId(self, user_id: str):
+    def set_user_id(self, user_id: str):
         self.user_id = user_id
 
-    def setName(self, name: str):
+    def set_name(self, name: str):
         self.name = name
 
-    def setGold(self, gold: int):
+    def set_gold(self, gold: int):
         self.gold = gold
 
-    def setFarm(self, farm:int):
+    def set_farm(self, farm: int):
         self.farm = farm
 
-    def setSavedDate(self, saved_date: int):
+    def set_saved_date(self, saved_date: int):
         self.saved_date = saved_date
-
-    def getUserId(self) -> str:
-        return self.user_id
-    
-    def getName(self) -> str:
-        return self.name
-    
-    def getGold(self) -> int:
-        return self.gold
-    
-    def getFarm(self) -> int:
-        return self.farm
-    
-    def getSavedDate(self) -> int:
-        return self.saved_date

@@ -10,111 +10,108 @@ FARM_PRICE = 20
 ATTACK_COST = 30
 ATTACK_SUCCESS_RATE = 70
 STEAL_COST = 1
-STEAL_SUCCESS_RATE = 50
+STEAL_SUCCESS_RATE = 30
 ONE_DAY_IN_SECONDS = 86400
 
-async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chatId = update.effective_chat.id
-    if (chatId != int(getenv("CHAT_ID"))):
-        print("top returns from method, since chatId is restricted")
-        return
-    users = app.db.getAllUsers()
-    sorted_users = sorted(users.keys(), key=lambda x: (users[x]['gold']), reverse=True)
-    response = app.utils.items_to_html(sorted_users, users)
-    await context.bot.send_message(chat_id=chatId, text=response, parse_mode="HTML")
 
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from stats, since chat is restricted")
-        return
-    user = app.db.getUser(str(update.effective_user.id), update.effective_user.first_name)
-    response = f"<b>{user.getName()}</b>, у вас: \n• {user.getGold()} {app.utils.declensed_gold(user.getGold())}; \n• {user.getFarm()} {app.utils.declensed_farm(user.getFarm())};"
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+def is_correct_chat(update: Update):
+    return update.effective_chat.id == int(getenv("CHAT_ID"))
 
-async def give(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (not update.effective_message.reply_to_message):
+
+def is_reply_message(update: Update):
+    if not is_correct_chat(update):
+        return False
+    if not update.effective_message.reply_to_message:
         print("returning from give, since message was not a reply")
-        return
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from give, since chat is restricted")
-        return
-    if (update.effective_message.reply_to_message.from_user.is_bot):
-        return
+        return False
+    return True
+    # return not update.effective_message.reply_to_message.from_user.is_bot
+
+
+def extract_replying_user(update: Update):
+    user_id = str(update.effective_message.reply_to_message.from_user.id)
+    user_name = update.effective_message.reply_to_message.from_user.first_name
+    receiving_user = app.db.get_user(user_id, user_name)
+    return receiving_user
+
+
+def extract_user(update: Update):
     sending_user_id = str(update.effective_user.id)
     sending_user_name = update.effective_user.first_name
-    receiving_user_id = str(update.effective_message.reply_to_message.from_user.id)
-    if sending_user_id == receiving_user_id:
+    sending_user = app.db.get_user(sending_user_id, sending_user_name)
+    return sending_user
+
+
+def is_same_user(user_1: GUser, user_2: GUser):
+    return user_1.user_id == user_2.user_id
+
+
+async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
         return
-    receiving_user_name = update.effective_message.reply_to_message.from_user.first_name
-    receiving_user = app.db.getUser(receiving_user_id, receiving_user_name)
-    sending_user = app.db.getUser(sending_user_id, sending_user_name)
+    users = app.db.get_all_users()
+    sorted_users = sorted(users.keys(), key=lambda x: (users[x]['farm'], users[x]['gold']), reverse=True)
+    response = app.utils.items_to_html(sorted_users, users)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
+    response = f"<b>{user.name}</b>, у вас: \n• {user.gold} {app.utils.declensed_gold(user.gold)}; \n• {user.farm} {app.utils.declensed_farm(user.farm)};"
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+
+async def give(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_reply_message(update):
+        return
+    receiving_user = extract_replying_user(update)
+    sending_user = extract_user(update)
+    if is_same_user(receiving_user, sending_user):
+        return
 
     text = update.effective_message.text
-    gold_am:int = 1
     try:
         res = [int(i) for i in text.split() if i.isdigit()]
         gold_am = res[0]
         print(f"gold_am is {gold_am}")
     except:
-        response = f"<b>{sending_user.getName()}</b>, не могу..."
+        response = f"<b>{sending_user.name}</b>, не могу..."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    if (gold_am > sending_user.getGold()):
-        response = f"<b>{sending_user.getName()}</b>, нужно больше золота."
+    if gold_am > sending_user.gold:
+        response = f"<b>{sending_user.name}</b>, нужно больше золота."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    
-    sending_user.setGold(sending_user.getGold() - gold_am)
-    receiving_user.setGold(receiving_user.getGold() + gold_am)
-    app.db.updateUserInDatabase(sending_user)
-    app.db.updateUserInDatabase(receiving_user)
 
-    response = f"<b>{receiving_user.getName()}</b>, у вас {receiving_user.getGold()} {app.utils.declensed_gold(receiving_user.getGold())}!\n<b>{sending_user.getName()}</b>, у вас {sending_user.getGold()} {app.utils.declensed_gold(sending_user.getGold())}."
+    sending_user.set_gold(sending_user.gold - gold_am)
+    receiving_user.set_gold(receiving_user.gold + gold_am)
+    app.db.update_user(sending_user)
+    app.db.update_user(receiving_user)
+
+    response = f"<b>{receiving_user.name}</b>, у вас {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}!\n<b>{sending_user.name}</b>, у вас {sending_user.farm} {app.utils.declensed_gold(sending_user.farm)}."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
 
 async def buy_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from buy_farm, since chat is restricted")
+    if not is_correct_chat(update):
         return
-    user = app.db.getUser(str(update.effective_user.id), update.effective_user.first_name)
-    if (user.getGold() < FARM_PRICE):
-        response = f'<b>{user.getName()}</b> не хватает золота. Требуется {FARM_PRICE} золотых для покупки фермы.'
+    user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
+    if user.gold < FARM_PRICE:
+        response = f'<b>{user.name}</b> не хватает золота. Требуется {FARM_PRICE} золотых для покупки фермы.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    user.setFarm(user.getFarm() + 1)
-    user.setGold(user.getGold() - FARM_PRICE)
-    app.db.updateUserInDatabase(user)
-    response = f'<b>{user.getName()}</b> вы купили ферму. Итого у вас {user.getFarm()} {app.utils.declensed_farm(user.getFarm())}.'
+    user.set_farm(user.farm + 1)
+    user.set_gold(user.gold - FARM_PRICE)
+    app.db.update_user(user)
+    response = f'<b>{user.name}</b> вы купили ферму. Итого у вас {user.farm} {app.utils.declensed_farm(user.farm)}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from buy_farm, since chat is restricted")
-        return
-    user = app.db.getUser(str(update.effective_user.id), update.effective_user.first_name)
-
-    current_time = int(time.time())
-    delta_time = current_time - user.getSavedDate()
-    days = delta_time // ONE_DAY_IN_SECONDS
-    leftover = delta_time - (days * ONE_DAY_IN_SECONDS)
-    if days <= 0:
-        next_time_str = time.strftime('%H:%M:%S', time.gmtime(ONE_DAY_IN_SECONDS - delta_time))
-        response = f'<b>{user.getName()}</b> дохода пока нет.\nВы сможете собрать следующий урожай через: {next_time_str}.'
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
-        return
-    income = days * user.getFarm()
-    user.setGold(user.getGold() + income)
-    user.setSavedDate(current_time - leftover)
-    next_time = user.getSavedDate() + ONE_DAY_IN_SECONDS - current_time
-    next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
-    app.db.updateUserInDatabase(user)
-    response = f'<b>{user.getName()}</b>, ваш доход {days} дн. X {user.getFarm()} {app.utils.declensed_farm(user.getFarm())} = {income} {app.utils.declensed_gold(income)}. Итого: {user.getGold()} {app.utils.declensed_gold(user.getGold())}.\nВы сможете собрать следующий урожай через: {next_time_str}.'
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from buy_farm, since chat is restricted")
+    if not is_correct_chat(update):
         return
     response = f'''
 FAQ:\n
@@ -125,6 +122,8 @@ FAQ:\n
 * <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол. 
 
 * <b>collect</b> - собрать накопленное золото со всех ферм.
+
+* <b>gratz</b> - подарить кому-то 1 золото
 
 * <b>give N</b> - подарить N кол-во золота тому, кого реплаим.
 
@@ -138,119 +137,119 @@ FAQ:\n
     '''
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+
 async def steal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (not update.effective_message.reply_to_message):
-        print("returning from steal, since message was not a reply")
+    if not is_reply_message(update):
         return
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from steal, since chat is restricted")
+    sending_user = extract_user(update)
+    receiving_user = extract_replying_user(update)
+    if is_same_user(sending_user, receiving_user):
         return
-    sending_user_id = str(update.effective_user.id)
-    sending_user_name = update.effective_user.first_name
-    if (update.effective_message.reply_to_message.from_user.is_bot):
-        return
-    receiving_user_id = str(update.effective_message.reply_to_message.from_user.id)
-    if sending_user_id == receiving_user_id:
-        return
-    receiving_user_name = update.effective_message.reply_to_message.from_user.first_name
-    receiving_user = app.db.getUser(receiving_user_id, receiving_user_name)
-    sending_user = app.db.getUser(sending_user_id, sending_user_name)
-    if (sending_user.getGold() < STEAL_COST):
-        response = f'<b>{sending_user_name}</b>, нужно больше золота ({STEAL_COST}). У вас: {sending_user.getGold()}.'
+    if sending_user.gold < STEAL_COST:
+        response = f'<b>{sending_user.name}</b>, нужно больше золота ({STEAL_COST}). У вас: {sending_user.gold}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    if (receiving_user.getGold() <=0):
-        response = f'У <b>{receiving_user_name}</b> нету золота.'
+    if receiving_user.gold <= 0:
+        response = f'У <b>{receiving_user.name}</b> нету золота.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    
-    sending_user.decrementGold()
-    response = f'Готовится кража... \n{sending_user_name} попытается украсть у {receiving_user_name} золото (шанс {STEAL_SUCCESS_RATE}%). \n{sending_user_name} потратил {STEAL_COST} золото... \nИтого у него остается {sending_user.getGold()} {app.utils.declensed_gold(sending_user.getGold())}.'
+
+    sending_user.decrement_gold()
+    response = f'Готовится кража... \n{sending_user.name} попытается украсть у {receiving_user.name} золото (шанс успеха {STEAL_SUCCESS_RATE}%). \nНа подготовки {sending_user.name} потратил {STEAL_COST} золото (осталось: {sending_user.gold})...'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
-    
+
     if app.utils.roll_for_success(STEAL_SUCCESS_RATE):
-        sending_user.incrementGold()
-        receiving_user.decrementGold()
-        app.db.updateUserInDatabase(sending_user)
-        app.db.updateUserInDatabase(receiving_user)
-        response = f'<b>{sending_user_name}</b> успешная кража!\n<b>{sending_user_name}</b> получает 1 золото\n<b>{receiving_user_name}</b> теряет 1 золото.\nИтого:\n* <b>{sending_user_name}</b> - {sending_user.getGold()} {app.utils.declensed_gold(sending_user.getGold())}\n* <b>{receiving_user_name}</b> - {receiving_user.getGold()} {app.utils.declensed_gold(receiving_user.getGold())}\n'
+        sending_user.increment_gold()
+        receiving_user.decrement_gold()
+        app.db.update_user(sending_user)
+        app.db.update_user(receiving_user)
+        response = f'<b>{sending_user.name}</b> успешная кража!\n<b>{sending_user.name}</b> получает 1 золото (итого: {sending_user.gold})!\n<b>{receiving_user.name}</b> теряет 1 золото (итого: {receiving_user.gold}).'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
     else:
-        receiving_user.incrementGold()
-        sending_user.decrementGold()
-        app.db.updateUserInDatabase(sending_user)
-        app.db.updateUserInDatabase(receiving_user)
-        response = f'<b>{sending_user_name}</b> вас поймали на краже!\n<b>{receiving_user_name}</b> получает 1 золото, <b>{sending_user_name}</b> теряет 1 золото.\nИтого:\n* <b>{sending_user_name}</b> - {sending_user.getGold()} {app.utils.declensed_gold(sending_user.getGold())}\n* <b>{receiving_user_name}</b> - {receiving_user.getGold()} {app.utils.declensed_gold(receiving_user.getGold())}'
+        app.db.update_user(sending_user)
+        response = f'<b>{sending_user.name}</b> кража провалилась!'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from buy_farm, since chat is restricted")
-        return
-    user = app.db.getUser(str(update.effective_user.id), update.effective_user.first_name)
 
+async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
     current_time = int(time.time())
-    delta_time = current_time - user.getSavedDate()
+    delta_time = current_time - user.saved_date
     days = delta_time // ONE_DAY_IN_SECONDS
     leftover = delta_time - (days * ONE_DAY_IN_SECONDS)
     if days <= 0:
         next_time_str = time.strftime('%H:%M:%S', time.gmtime(ONE_DAY_IN_SECONDS - delta_time))
-        response = f'<b>{user.getName()}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
+        response = f'<b>{user.name}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    income = days * user.getFarm()
-    user.setGold(user.getGold() + income)
-    user.setSavedDate(current_time - leftover)
-    next_time = user.getSavedDate() + ONE_DAY_IN_SECONDS - current_time
+    income = days * user.farm
+    user.set_gold(user.gold + income)
+    user.set_saved_date(current_time - leftover)
+    next_time = user.saved_date + ONE_DAY_IN_SECONDS - current_time
     next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
-    app.db.updateUserInDatabase(user)
-    response = f'<b>{user.getName()}</b>, ваш доход {days} дн. X {user.getFarm()} {app.utils.declensed_farm(user.getFarm())} = {income} {app.utils.declensed_gold(income)}. Итого: {user.getGold()} {app.utils.declensed_gold(user.getGold())}.\nВы сможете собрать золото через: {next_time_str}.'
+    app.db.update_user(user)
+    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {app.utils.declensed_farm(user.farm)} = {income} {app.utils.declensed_gold(income)}. Итого: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать золото через: {next_time_str}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
 
 async def attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if (not update.effective_message.reply_to_message):
-        print("returning from steal, since message was not a reply")
+    if not is_reply_message(update):
         return
-    if (update.effective_chat.id != int(getenv("CHAT_ID"))):
-        print("returning from steal, since chat is restricted")
+    sending_user = extract_user(update)
+    receiving_user = extract_replying_user(update)
+    if is_same_user(sending_user, receiving_user):
         return
-    if (update.effective_message.reply_to_message.from_user.is_bot):
-        return
-    sending_user_id = str(update.effective_user.id)
-    sending_user_name = update.effective_user.first_name
-    receiving_user_id = str(update.effective_message.reply_to_message.from_user.id)
-    if sending_user_id == receiving_user_id:
-        return
-    receiving_user_name = update.effective_message.reply_to_message.from_user.first_name
-    receiving_user = app.db.getUser(receiving_user_id, receiving_user_name)
-    sending_user = app.db.getUser(sending_user_id, sending_user_name)
-    if (sending_user.getGold() < ATTACK_COST):
-        response = f'<b>{sending_user_name}</b>, нужно больше золота (30), у вас {sending_user.getGold()}.'
+    if sending_user.gold < ATTACK_COST:
+        response = f'<b>{sending_user.name}</b>, нужно больше золота (30), у вас {sending_user.gold}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    if (receiving_user.getFarm() <= 1):
-        response = f'У <b>{receiving_user_name}</b> и так всего 1 ферма!'
+    if receiving_user.farm <= 1:
+        response = f'У <b>{receiving_user.name}</b> и так всего 1 ферма!'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    
-    sending_user.setGold(sending_user.getGold() - ATTACK_COST)
-    response = f'Готовим набег...\n{sending_user_name} атакует {receiving_user_name}.\nШанс успеха {ATTACK_SUCCESS_RATE}%...\nНа подготовку набега у {sending_user_name} потратилось {ATTACK_COST} золота\nИтого у него осталось: {sending_user.getGold()} {app.utils.declensed_gold(sending_user.getGold())}.'
+
+    sending_user.set_gold(sending_user.gold - ATTACK_COST)
+    response = f'Готовим набег...\n{sending_user.name} атакует {receiving_user.name}.\nШанс успеха {ATTACK_SUCCESS_RATE}%...\nНа подготовку набега у {sending_user.name} потратилось {ATTACK_COST} золота\nИтого у него осталось: {sending_user.gold} {app.utils.declensed_gold(sending_user.gold)}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
-    
+
     if app.utils.roll_for_success(ATTACK_SUCCESS_RATE):
-        receiving_user.setFarm(receiving_user.getFarm() - 1)
-        app.db.updateUserInDatabase(sending_user)
-        app.db.updateUserInDatabase(receiving_user)
-        response = f'<b>{sending_user_name}</b> вы безжалостно сожгли ферму <b>{receiving_user_name}</b>.\nИтого, у <b>{receiving_user_name}</b> осталось {receiving_user.getFarm()} {app.utils.declensed_farm(receiving_user.getFarm())}.'
+        receiving_user.set_farm(receiving_user.farm - 1)
+        app.db.update_user(sending_user)
+        app.db.update_user(receiving_user)
+        response = f'<b>{sending_user.name}</b> вы безжалостно сожгли ферму <b>{receiving_user.name}</b>.\nИтого, у <b>{receiving_user.name}</b> {receiving_user.farm} {app.utils.declensed_farm(receiving_user.farm)}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
     else:
-        app.db.updateUserInDatabase(sending_user)
-        response = f'<b>{sending_user_name}</b> ваш набег полностью провален!\n<b>{receiving_user_name}</b> все фермы в целости и сохранности.'
+        app.db.update_user(sending_user)
+        response = f'<b>{sending_user.name}</b> ваш набег полностью провален!\n<b>{receiving_user.name}</b> все фермы в целости и сохранности.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-async def runTelegramApp():
+
+async def gratz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_reply_message(update):
+        return
+    receiving_user = extract_replying_user(update)
+    sending_user = extract_user(update)
+    if is_same_user(receiving_user, sending_user):
+        return
+
+    if sending_user.gold <= 0:
+        response = f"<b>{sending_user.name}</b>, нужно больше золота (1)."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    sending_user.decrement_gold()
+    receiving_user.increment_gold()
+    app.db.update_user(sending_user)
+    app.db.update_user(receiving_user)
+
+    response = f"<b>{receiving_user.name}</b> грац! Получите +1 зол. (всего: {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}) от <b>{sending_user.name}</b> (всего: {sending_user.gold} {app.utils.declensed_gold(sending_user.gold)})."
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+def run_telegram_app():
     print('running telegram app...')
-    application = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
+    _app = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
     top_handler = CommandHandler('top', top)
     stats_handler = CommandHandler('stats', stats)
     give_handler = CommandHandler('give', give)
@@ -259,38 +258,26 @@ async def runTelegramApp():
     collect_farm_handler = CommandHandler('collect', collect_farm)
     faq_handler = CommandHandler('faq', faq)
     attack_handler = CommandHandler('attack', attack)
-    application.add_handler(top_handler)
-    application.add_handler(stats_handler)
-    application.add_handler(give_handler)
-    application.add_handler(buy_farm_handler)
-    application.add_handler(collect_farm_handler)
-    application.add_handler(faq_handler)
-    application.add_handler(steal_handler)
-    application.add_handler(attack_handler)
-    await application.initialize()
-    return application
+    gratz_handler = CommandHandler('gratz', gratz)
+    _app.add_handler(top_handler)
+    _app.add_handler(stats_handler)
+    _app.add_handler(give_handler)
+    _app.add_handler(buy_farm_handler)
+    _app.add_handler(collect_farm_handler)
+    _app.add_handler(faq_handler)
+    _app.add_handler(steal_handler)
+    _app.add_handler(attack_handler)
+    _app.add_handler(gratz_handler)
+    return _app
 
-async def processInput(value):
-    application = await runTelegramApp()
-    update = Update.de_json(value, application.bot)
-    await application.process_update(update)
+
+async def process_input(value):
+    _app = run_telegram_app()
+    await _app.initialize()
+    update = Update.de_json(value, _app.bot)
+    await _app.process_update(update)
+
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
-    top_handler = CommandHandler('top', top)
-    stats_handler = CommandHandler('stats', stats)
-    give_handler = CommandHandler('give', give)
-    buy_farm_handler = CommandHandler('buy_farm', buy_farm)
-    steal_handler = CommandHandler('steal', steal)
-    collect_farm_handler = CommandHandler('collect', collect_farm)
-    faq_handler = CommandHandler('faq', faq)
-    attack_handler = CommandHandler('attack', attack)
-    application.add_handler(top_handler)
-    application.add_handler(stats_handler)
-    application.add_handler(give_handler)
-    application.add_handler(buy_farm_handler)
-    application.add_handler(collect_farm_handler)
-    application.add_handler(faq_handler)
-    application.add_handler(steal_handler)
-    application.add_handler(attack_handler)
+    application = run_telegram_app()
     application.run_polling()

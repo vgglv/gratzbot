@@ -1,5 +1,7 @@
 .vscode/
 .venv/
+venv/
 __pycache__
 /app/test.py
 .vercel
+.idea

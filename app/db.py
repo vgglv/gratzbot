@@ -19,15 +19,16 @@ cred = firebase_admin.credentials.Certificate({
 })
 default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
 
-def getUser(user_id: str, user_name : str) -> GUser:
+
+def get_user(user_id: str, user_name: str) -> GUser:
     user = db.reference(f"/Users/{user_id}").get()
     print(f"getting user {user_id}, value: {user}")
     if not user:
         print("user not exist, creating user...")
-        user = createUser(user_id, user_name)
+        user = create_user(user_id, user_name)
         print(f"created user: {user}")
 
-    if not "gold" in user:
+    if "gold" not in user:
         user["gold"] = 0
 
     result = GUser(
@@ -39,35 +40,38 @@ def getUser(user_id: str, user_name : str) -> GUser:
     )
     return result
 
-def updateUserInDatabase(user:GUser) -> None:
-    value = {
-        "name": user.getName(),
-        "gold": user.getGold(),
-        "farm": user.getFarm(),
-        "saved_date": user.getSavedDate()
-    }
-    db.reference(f"/Users/{user.getUserId()}").update(value)
-    return value
 
-def createUser(userId: str, name: str) -> dict[str, any]:
+def update_user(user: GUser) -> None:
+    value = {
+        "name": user.name,
+        "gold": user.gold,
+        "farm": user.farm,
+        "saved_date": user.saved_date
+    }
+    db.reference(f"/Users/{user.user_id}").update(value)
+
+
+def create_user(user_id: str, name: str) -> dict[str, any]:
     current_timestamp = int(time.time())
-    userData = {
+    user_data = {
         "name": name,
         "gold": 5,
         "farm": 1,
         "saved_date": current_timestamp
     }
-    db.reference("/Users/").child(userId).set(userData)
-    return userData
+    db.reference("/Users/").child(user_id).set(user_data)
+    return user_data
 
-def setUserData(user:GUser) -> None:
+
+def set_user_data(user: GUser) -> None:
     value = {
-        "name": user.getName(),
-        "gold": user.getGold(),
-        "farm": user.getFarm(),
-        "saved_date": user.getSavedDate()
+        "name": user.name,
+        "gold": user.gold,
+        "farm": user.farm,
+        "saved_date": user.saved_date
     }
-    db.reference(f"/Users/{user.getUserId()}").set(value)
+    db.reference(f"/Users/{user.user_id}").set(value)
 
-def getAllUsers():
+
+def get_all_users():
     return db.reference("/Users/").get()
