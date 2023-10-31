@@ -24,8 +24,7 @@ def is_reply_message(update: Update):
     if not update.effective_message.reply_to_message:
         print("returning from give, since message was not a reply")
         return False
-    return True
-    # return not update.effective_message.reply_to_message.from_user.is_bot
+    return not update.effective_message.reply_to_message.from_user.is_bot
 
 
 def extract_replying_user(update: Update):
@@ -91,7 +90,7 @@ async def give(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.db.update_user(sending_user)
     app.db.update_user(receiving_user)
 
-    response = f"<b>{receiving_user.name}</b>, у вас {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}!\n<b>{sending_user.name}</b>, у вас {sending_user.farm} {app.utils.declensed_gold(sending_user.farm)}."
+    response = f"<b>{receiving_user.name}</b>, у вас {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}!\n<b>{sending_user.name}</b>, у вас {sending_user.gold} {app.utils.declensed_gold(sending_user.gold)}."
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
