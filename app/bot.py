@@ -153,8 +153,7 @@ async def steal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    sending_user.decrement_gold()
-    response = f'Готовится кража... \n{sending_user.name} попытается украсть у {receiving_user.name} золото (шанс успеха {STEAL_SUCCESS_RATE}%). \nНа подготовки {sending_user.name} потратил {STEAL_COST} золото (осталось: {sending_user.gold})...'
+    response = f'Готовится кража... \n{sending_user.name} попытается украсть у {receiving_user.name} золото (шанс успеха {STEAL_SUCCESS_RATE}%)'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
     if app.utils.roll_for_success(STEAL_SUCCESS_RATE):
@@ -162,11 +161,14 @@ async def steal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         receiving_user.decrement_gold()
         app.db.update_user(sending_user)
         app.db.update_user(receiving_user)
-        response = f'<b>{sending_user.name}</b> успешная кража!\n<b>{sending_user.name}</b> получает 1 золото (итого: {sending_user.gold})!\n<b>{receiving_user.name}</b> теряет 1 золото (итого: {receiving_user.gold}).'
+        response = f'<b>{sending_user.name}</b> успешная кража!\nВы получаете 1 золотой из кармана <b>{receiving_user.name}</b>.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
     else:
+        sending_user.decrement_gold()
+        receiving_user.increment_gold()
         app.db.update_user(sending_user)
-        response = f'<b>{sending_user.name}</b> кража провалилась!'
+        app.db.update_user(receiving_user)
+        response = f'<b>{sending_user.name}</b> кража провалилась!\n<b>{receiving_user.name}</b> получает 1 золотой из вашего кармана.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
