@@ -75,3 +75,19 @@ def set_user_data(user: GUser) -> None:
 
 def get_all_users():
     return db.reference("/Users/").get()
+
+
+def set_gold_in_bank(gold: int):
+    ref = db.reference("/bank/gold/amount").get()
+    if not ref:
+        db.reference("/bank/gold").child("amount").set(gold)
+        return
+    db.reference("/bank/gold").child("amount").set(gold)
+
+
+def get_gold_from_bank():
+    gold = db.reference("/bank/gold").get()
+    if not gold:
+        db.reference("/bank/gold").child("amount").set(0)
+    else:
+        return gold["amount"]

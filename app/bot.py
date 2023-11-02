@@ -7,12 +7,17 @@ from app.user import GUser
 import time
 
 FARM_PRICE = 20
-ATTACK_COST = 30
-ATTACK_SUCCESS_RATE = 70
+ATTACK_COST = 20
+ATTACK_SUCCESS_RATE = 50
 STEAL_COST = 1
 STEAL_SUCCESS_RATE = 30
+CASINO_SUCCESS_RATE = 33
 ONE_DAY_IN_SECONDS = 86400
+LOTTERY_COST = 1
+LOTTERY_SUCCESS_RATE = 3
 
+def get_stats(user: GUser):
+    return f"<b>{user.name}</b>, у вас: \n• {user.gold} {app.utils.declensed_gold(user.gold)}; \n• {user.farm} {app.utils.declensed_farm(user.farm)};"
 
 def is_correct_chat(update: Update):
     return update.effective_chat.id == int(getenv("CHAT_ID"))
@@ -58,7 +63,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
     user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
-    response = f"<b>{user.name}</b>, у вас: \n• {user.gold} {app.utils.declensed_gold(user.gold)}; \n• {user.farm} {app.utils.declensed_farm(user.farm)};"
+    response = get_stats(user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -76,7 +81,7 @@ async def give(update: Update, context: ContextTypes.DEFAULT_TYPE):
         gold_am = res[0]
         print(f"gold_am is {gold_am}")
     except:
-        response = f"<b>{sending_user.name}</b>, не могу..."
+        response = f"<b>{sending_user.name}</b>, неправильно ввели команду, RTFM."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
@@ -90,7 +95,7 @@ async def give(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.db.update_user(sending_user)
     app.db.update_user(receiving_user)
 
-    response = f"<b>{receiving_user.name}</b>, у вас {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}!\n<b>{sending_user.name}</b>, у вас {sending_user.gold} {app.utils.declensed_gold(sending_user.gold)}."
+    response = f"<b>{sending_user.name}</b> дарит <b>{receiving_user.name}</b> {gold_am} {app.utils.declensed_gold(gold_am)}!\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -130,9 +135,15 @@ FAQ:\n
 
 * <b>stats</b> - узнать свои статы.
 
-* <b>attack</b> - СТОИМОСТЬ: {ATTACK_COST}. ОПИСАНИЕ: совершить набег на того, кому реплаим. ШАНС успеха = {ATTACK_SUCCESS_RATE}%. При успешном набеге у оппонента сгорает 1 ферма. Нельзя использовать против тех, у кого только 1 ферма.
+* <b>attack</b> - СТОИМОСТЬ: {ATTACK_COST}. ОПИСАНИЕ: совершить набег на того, кому реплаим. ШАНС успеха = {ATTACK_SUCCESS_RATE}%. При успешном набеге у оппонента отжимается 1 ферма и передается вам, в противном случае, ваша ферма отдается оппоненту. Нельзя использовать против тех, у кого только 1 ферма.
 
-* <b>steal</b> - СТОИМОСТЬ: {STEAL_COST}, ОПИСАНИЕ: украсть золото у того, кому реплаим. ШАНС успеха = {STEAL_SUCCESS_RATE}%. При провале у вас отнимается золото и отдается тому, у кого вы пытались спиздить. При успешной краже, вы крадете 1 золото.
+* <b>steal</b> - СТОИМОСТЬ: 0, ОПИСАНИЕ: украсть золото у того, кому реплаим. ШАНС успеха = {STEAL_SUCCESS_RATE}%. При провале у вас отнимается золото и отдается тому, у кого вы пытались украсть. При успешной краже, вы крадете 1 золото.
+
+* <b>casino N</b> - поставить N золотых на казино, шанс удвоить их равен {CASINO_SUCCESS_RATE}%, в противном случае ваше золото уходит в <b>призовой фонд лотереи</b>.
+
+* <b>lottery</b> - СТОИМОСТЬ: {LOTTERY_COST}. ШАНС успеха: {LOTTERY_SUCCESS_RATE}%. При выигрыше вы получаете <b>призовой фонд лотереи</b>.
+
+* <b>prize</b> - СТОИМОСТЬ: 0, выводит текущий призовой фонд.
     '''
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
@@ -159,17 +170,15 @@ async def steal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if app.utils.roll_for_success(STEAL_SUCCESS_RATE):
         sending_user.increment_gold()
         receiving_user.decrement_gold()
-        app.db.update_user(sending_user)
-        app.db.update_user(receiving_user)
-        response = f'<b>{sending_user.name}</b> успешная кража!\nВы получаете 1 золотой из кармана <b>{receiving_user.name}</b>.'
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        response = f'<b>{sending_user.name}</b> успешная кража!\nВы получаете 1 золотой из кармана <b>{receiving_user.name}</b>.\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}'
     else:
         sending_user.decrement_gold()
         receiving_user.increment_gold()
-        app.db.update_user(sending_user)
-        app.db.update_user(receiving_user)
-        response = f'<b>{sending_user.name}</b> кража провалилась!\n<b>{receiving_user.name}</b> получает 1 золотой из вашего кармана.'
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        response = f'<b>{sending_user.name}</b> кража провалилась!\n<b>{receiving_user.name}</b> получает 1 золотой из вашего кармана.\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}'
+
+    app.db.update_user(sending_user)
+    app.db.update_user(receiving_user)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
 async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -203,7 +212,7 @@ async def attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_same_user(sending_user, receiving_user):
         return
     if sending_user.gold < ATTACK_COST:
-        response = f'<b>{sending_user.name}</b>, нужно больше золота (30), у вас {sending_user.gold}.'
+        response = f'<b>{sending_user.name}</b>, нужно больше золота ({ATTACK_COST}), у вас {sending_user.gold}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
     if receiving_user.farm <= 1:
@@ -217,13 +226,17 @@ async def attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if app.utils.roll_for_success(ATTACK_SUCCESS_RATE):
         receiving_user.set_farm(receiving_user.farm - 1)
+        sending_user.set_farm(sending_user.farm + 1)
         app.db.update_user(sending_user)
         app.db.update_user(receiving_user)
-        response = f'<b>{sending_user.name}</b> вы безжалостно сожгли ферму <b>{receiving_user.name}</b>.\nИтого, у <b>{receiving_user.name}</b> {receiving_user.farm} {app.utils.declensed_farm(receiving_user.farm)}.'
+        response = f'<b>{sending_user.name}</b> вы безжалостно отобрали ферму у <b>{receiving_user.name}</b>..\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
     else:
+        sending_user.set_farm(sending_user.farm - 1)
+        receiving_user.set_farm(receiving_user.farm + 1)
         app.db.update_user(sending_user)
-        response = f'<b>{sending_user.name}</b> ваш набег полностью провален!\n<b>{receiving_user.name}</b> все фермы в целости и сохранности.'
+        app.db.update_user(receiving_user)
+        response = f'<b>{sending_user.name}</b> ваш набег провален!\n<b>{receiving_user.name}</b> отжимает одну из ваших ферм себе..\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -245,30 +258,100 @@ async def gratz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.db.update_user(sending_user)
     app.db.update_user(receiving_user)
 
-    response = f"<b>{receiving_user.name}</b> грац! Получите +1 зол. (всего: {receiving_user.gold} {app.utils.declensed_gold(receiving_user.gold)}) от <b>{sending_user.name}</b> (всего: {sending_user.gold} {app.utils.declensed_gold(sending_user.gold)})."
+    response = f"<b>{receiving_user.name}</b> грац! Получите +1 зол.\n\n{get_stats(sending_user)}\n\n{get_stats(receiving_user)}"
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+
+async def casino(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    sending_user = extract_user(update)
+    message = update.effective_message.text
+    try:
+        res = [int(i) for i in message.split() if i.isdigit()]
+        gold_am = res[0]
+        print(f"gold_am is {gold_am}")
+    except:
+        response = f"<b>{sending_user.name}</b>, неправильный ввод команды, RTFM."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    if gold_am > sending_user.gold:
+        response = f"<b>{sending_user.name}</b>, нужно больше золота."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    if app.utils.roll_for_success(CASINO_SUCCESS_RATE):
+        big_money = gold_am * 2
+        sending_user.set_gold(sending_user.gold + big_money - gold_am)
+        response = f"<b>{sending_user.name}</b> ВЫ СОРВАЛИ КУШ! Вы получаете {big_money}!\n\n{get_stats(sending_user)}"
+    else:
+        sending_user.set_gold(sending_user.gold - gold_am)
+        current_g = app.db.get_gold_from_bank() + gold_am
+        app.db.set_gold_in_bank(current_g)
+        response = f"<b>{sending_user.name}</b> вы безнадежно спустили {gold_am} {app.utils.declensed_gold(gold_am)}, в следующий раз повезет.\n\n{get_stats(sending_user)}\n\nПризовой фонд лотереи: {current_g} {app.utils.declensed_gold(current_g)}."
+
+    app.db.update_user(sending_user)
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    sending_user = extract_user(update)
+    gold_in_bank = app.db.get_gold_from_bank()
+
+    if gold_in_bank <= 0:
+        response = f"<b>{sending_user.name}</b> в <b>призовом фонде</b> нет золота."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    if sending_user.gold < LOTTERY_COST:
+        response = f"<b>{sending_user.name}</b> у вас нет денег на покупку лотерейного билета."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    sending_user.decrement_gold()
+    response = f"{sending_user.name} купил лотерейный билет... шанс выигрыша составляет {LOTTERY_SUCCESS_RATE}%, призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+    if app.utils.roll_for_success(LOTTERY_SUCCESS_RATE):
+        sending_user.gold = sending_user.gold + gold_in_bank
+        app.db.set_gold_in_bank(0)
+        response = f"<b>{sending_user.name}</b> ВЫ ВЫИГРАЛИ!!!!\n\n{get_stats(sending_user)}"
+    else:
+        gold_in_bank = gold_in_bank + 1
+        response = f"<b>{sending_user.name}</b> вы не выиграли.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
+        app.db.set_gold_in_bank(gold_in_bank)
+
+    app.db.update_user(sending_user)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+async def prize(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    gold_in_bank = app.db.get_gold_from_bank()
+    response = f"Призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def run_telegram_app():
     print('running telegram app...')
     _app = ApplicationBuilder().token(getenv("TELEGRAM_TOKEN")).build()
-    top_handler = CommandHandler('top', top)
-    stats_handler = CommandHandler('stats', stats)
-    give_handler = CommandHandler('give', give)
-    buy_farm_handler = CommandHandler('buy_farm', buy_farm)
-    steal_handler = CommandHandler('steal', steal)
-    collect_farm_handler = CommandHandler('collect', collect_farm)
-    faq_handler = CommandHandler('faq', faq)
-    attack_handler = CommandHandler('attack', attack)
-    gratz_handler = CommandHandler('gratz', gratz)
-    _app.add_handler(top_handler)
-    _app.add_handler(stats_handler)
-    _app.add_handler(give_handler)
-    _app.add_handler(buy_farm_handler)
-    _app.add_handler(collect_farm_handler)
-    _app.add_handler(faq_handler)
-    _app.add_handler(steal_handler)
-    _app.add_handler(attack_handler)
-    _app.add_handler(gratz_handler)
+    handlers = [
+        CommandHandler('top', top),
+        CommandHandler('stats', stats),
+        CommandHandler('give', give),
+        CommandHandler('buy_farm', buy_farm),
+        CommandHandler('steal', steal),
+        CommandHandler('collect', collect_farm),
+        CommandHandler('faq', faq),
+        CommandHandler('attack', attack),
+        CommandHandler('gratz', gratz),
+        CommandHandler('casino', casino),
+        CommandHandler('lottery', lottery),
+        CommandHandler('prize', prize)
+    ]
+    _app.add_handlers(handlers=handlers)
     return _app
 
 
