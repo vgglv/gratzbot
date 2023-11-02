@@ -1,12 +1,12 @@
 import random
 
 
-def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
+def numeral_noun_declension(number, nominative_singular, genitive_singular, nominative_plural):
     dig_last = number % 10
     return (
             (number in range(5, 20)) and nominative_plural or
             (1 in (number, dig_last)) and nominative_singular or
-            ({number, dig_last} & {2, 3, 4}) and genetive_singular or nominative_plural
+            ({number, dig_last} & {2, 3, 4}) and genitive_singular or nominative_plural
     )
 
 
