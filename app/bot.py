@@ -14,7 +14,7 @@ STEAL_SUCCESS_RATE = 30
 CASINO_SUCCESS_RATE = 33
 ONE_DAY_IN_SECONDS = 86400
 LOTTERY_COST = 1
-LOTTERY_SUCCESS_RATE = 3
+LOTTERY_SUCCESS_RATE = 100
 
 def get_stats(user: GUser):
     return f"<b>{user.name}</b>, у вас: \n• {user.gold} {app.utils.declensed_gold(user.gold)}; \n• {user.farm} {app.utils.declensed_farm(user.farm)};"
