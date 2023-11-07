@@ -11,7 +11,7 @@ ATTACK_COST = 30
 ATTACK_SUCCESS_RATE = 70
 STEAL_COST = 1
 STEAL_SUCCESS_RATE = 30
-ONE_DAY_IN_SECONDS = 86400
+FARM_COOLDOWN = 7200
 
 
 def is_correct_chat(update: Update):
@@ -117,11 +117,11 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
 FAQ:\n
 * У каждого пользователя в начале выдается 5 золотых и 1 Ферма.
 
-* 1 Ферма плодит в день 1 золото.
+* 1 Ферма платит налог каждые 3 часа в размере 1 зол.
 
 * <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол. 
 
-* <b>collect</b> - собрать накопленное золото со всех ферм.
+* <b>collect</b> - собрать налог со всех ферм.
 
 * <b>gratz</b> - подарить кому-то 1 золото
 
@@ -177,20 +177,20 @@ async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
     current_time = int(time.time())
     delta_time = current_time - user.saved_date
-    days = delta_time // ONE_DAY_IN_SECONDS
-    leftover = delta_time - (days * ONE_DAY_IN_SECONDS)
-    if days <= 0:
-        next_time_str = time.strftime('%H:%M:%S', time.gmtime(ONE_DAY_IN_SECONDS - delta_time))
+    hours = delta_time // FARM_COOLDOWN
+    leftover = delta_time - (hours * FARM_COOLDOWN)
+    if hours <= 0:
+        next_time_str = time.strftime('%H:%M:%S', time.gmtime(FARM_COOLDOWN - delta_time))
         response = f'<b>{user.name}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    income = days * user.farm
+    income = hours * user.farm
     user.set_gold(user.gold + income)
     user.set_saved_date(current_time - leftover)
-    next_time = user.saved_date + ONE_DAY_IN_SECONDS - current_time
+    next_time = user.saved_date + FARM_COOLDOWN - current_time
     next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
     app.db.update_user(user)
-    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {app.utils.declensed_farm(user.farm)} = {income} {app.utils.declensed_gold(income)}. Итого: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать золото через: {next_time_str}.'
+    response = f'<b>{user.name}</b>, {user.farm} {app.utils.declensed_farm(user.farm)} уплатили налог в размере {income} зол.\nИтого у вас: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать налог через: {next_time_str}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
