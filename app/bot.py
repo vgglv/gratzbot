@@ -11,13 +11,15 @@ ATTACK_COST = 20
 ATTACK_SUCCESS_RATE = 50
 STEAL_COST = 1
 STEAL_SUCCESS_RATE = 30
+FARM_COOLDOWN = 7200
 CASINO_SUCCESS_RATE = 33
-ONE_DAY_IN_SECONDS = 86400
 LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
 
+
 def get_stats(user: GUser):
     return f"<b>{user.name}</b>, у вас: \n• {user.gold} {app.utils.declensed_gold(user.gold)}; \n• {user.farm} {app.utils.declensed_farm(user.farm)};"
+
 
 def is_correct_chat(update: Update):
     return update.effective_chat.id == int(getenv("CHAT_ID"))
@@ -121,11 +123,11 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
 FAQ:\n
 * У каждого пользователя в начале выдается 5 золотых и 1 Ферма.
 
-* 1 Ферма плодит в день 1 золото.
+* 1 Ферма платит налог каждые 3 часа в размере 1 зол.
 
 * <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол. 
 
-* <b>collect</b> - собрать накопленное золото со всех ферм.
+* <b>collect</b> - собрать налог со всех ферм.
 
 * <b>gratz</b> - подарить кому-то 1 золото
 
@@ -187,20 +189,20 @@ async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
     current_time = int(time.time())
     delta_time = current_time - user.saved_date
-    days = delta_time // ONE_DAY_IN_SECONDS
-    leftover = delta_time - (days * ONE_DAY_IN_SECONDS)
-    if days <= 0:
-        next_time_str = time.strftime('%H:%M:%S', time.gmtime(ONE_DAY_IN_SECONDS - delta_time))
+    hours = delta_time // FARM_COOLDOWN
+    leftover = delta_time - (hours * FARM_COOLDOWN)
+    if hours <= 0:
+        next_time_str = time.strftime('%H:%M:%S', time.gmtime(FARM_COOLDOWN - delta_time))
         response = f'<b>{user.name}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    income = days * user.farm
+    income = hours * user.farm
     user.set_gold(user.gold + income)
     user.set_saved_date(current_time - leftover)
-    next_time = user.saved_date + ONE_DAY_IN_SECONDS - current_time
+    next_time = user.saved_date + FARM_COOLDOWN - current_time
     next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
     app.db.update_user(user)
-    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {app.utils.declensed_farm(user.farm)} = {income} {app.utils.declensed_gold(income)}. Итого: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать золото через: {next_time_str}.'
+    response = f'<b>{user.name}</b>, {user.farm} {app.utils.declensed_farm(user.farm)} уплатили налог в размере {income} зол.\nИтого у вас: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать налог через: {next_time_str}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -295,6 +297,7 @@ async def casino(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+
 async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
@@ -327,12 +330,14 @@ async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.db.update_user(sending_user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+
 async def prize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
     gold_in_bank = app.db.get_gold_from_bank()
     response = f"Призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
 
 def run_telegram_app():
     print('running telegram app...')
