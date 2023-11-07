@@ -11,7 +11,7 @@ ATTACK_COST = 20
 ATTACK_SUCCESS_RATE = 50
 STEAL_COST = 1
 STEAL_SUCCESS_RATE = 30
-FARM_COOLDOWN = 7200
+FARM_COOLDOWN = 86400
 CASINO_SUCCESS_RATE = 33
 LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
@@ -123,11 +123,11 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
 FAQ:\n
 * У каждого пользователя в начале выдается 5 золотых и 1 Ферма.
 
-* 1 Ферма платит налог каждые 3 часа в размере 1 зол.
+* 1 Ферма генерит 1 золото каждый день.
 
 * <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол. 
 
-* <b>collect</b> - собрать налог со всех ферм.
+* <b>collect</b> - собрать накопленное золото со всех ферм.
 
 * <b>gratz</b> - подарить кому-то 1 золото
 
@@ -166,9 +166,6 @@ async def steal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    response = f'Готовится кража... \n{sending_user.name} попытается украсть у {receiving_user.name} золото (шанс успеха {STEAL_SUCCESS_RATE}%)'
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
-
     if app.utils.roll_for_success(STEAL_SUCCESS_RATE):
         sending_user.increment_gold()
         receiving_user.decrement_gold()
@@ -189,20 +186,20 @@ async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = app.db.get_user(str(update.effective_user.id), update.effective_user.first_name)
     current_time = int(time.time())
     delta_time = current_time - user.saved_date
-    hours = delta_time // FARM_COOLDOWN
-    leftover = delta_time - (hours * FARM_COOLDOWN)
-    if hours <= 0:
+    days = delta_time // FARM_COOLDOWN
+    leftover = delta_time - (days * FARM_COOLDOWN)
+    if days <= 0:
         next_time_str = time.strftime('%H:%M:%S', time.gmtime(FARM_COOLDOWN - delta_time))
         response = f'<b>{user.name}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
-    income = hours * user.farm
+    income = days * user.farm
     user.set_gold(user.gold + income)
     user.set_saved_date(current_time - leftover)
     next_time = user.saved_date + FARM_COOLDOWN - current_time
     next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
     app.db.update_user(user)
-    response = f'<b>{user.name}</b>, {user.farm} {app.utils.declensed_farm(user.farm)} уплатили налог в размере {income} зол.\nИтого у вас: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать налог через: {next_time_str}.'
+    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {app.utils.declensed_farm(user.farm)} = {income} {app.utils.declensed_gold(income)}. Итого: {user.gold} {app.utils.declensed_gold(user.gold)}.\nВы сможете собрать золото через: {next_time_str}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -291,7 +288,7 @@ async def casino(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sending_user.set_gold(sending_user.gold - gold_am)
         current_g = app.db.get_gold_from_bank() + gold_am
         app.db.set_gold_in_bank(current_g)
-        response = f"<b>{sending_user.name}</b> вы безнадежно спустили {gold_am} {app.utils.declensed_gold(gold_am)}, в следующий раз повезет.\n\n{get_stats(sending_user)}\n\nПризовой фонд лотереи: {current_g} {app.utils.declensed_gold(current_g)}."
+        response = f"<b>{sending_user.name}</b> вы безнадежно потратили {gold_am} {app.utils.declensed_gold(gold_am)}, в следующий раз повезет.\n\n{get_stats(sending_user)}\n\nПризовой фонд лотереи: {current_g} {app.utils.declensed_gold(current_g)}."
 
     app.db.update_user(sending_user)
 
@@ -315,8 +312,6 @@ async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     sending_user.decrement_gold()
-    response = f"{sending_user.name} купил лотерейный билет... шанс выигрыша составляет {LOTTERY_SUCCESS_RATE}%, призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
     if app.utils.roll_for_success(LOTTERY_SUCCESS_RATE):
         sending_user.gold = sending_user.gold + gold_in_bank
