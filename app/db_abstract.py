@@ -31,3 +31,11 @@ class AbstractDatabase(ABC):
     @abstractmethod
     def get_gold_from_bank(self) -> int:
         pass
+
+    @abstractmethod
+    def get_saved_pidor(self) -> dict:
+        pass
+
+    @abstractmethod
+    def set_pidor(self, user_id: str, name: str, epoch_days: int) -> None:
+        pass

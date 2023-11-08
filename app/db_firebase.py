@@ -85,3 +85,9 @@ class FirebaseDatabase(AbstractDatabase):
             db.reference("/bank/gold").child("amount").set(0)
             return 0
         return int(gold["amount"])
+
+    def get_saved_pidor(self) -> dict:
+        return None
+
+    def set_pidor(self, user_id: str, name: str, epoch_days: int) -> None:
+        pass

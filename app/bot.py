@@ -1,3 +1,5 @@
+import datetime
+import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
@@ -338,6 +340,23 @@ async def prize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = f"Призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+async def pidor(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+    saved_pidor = DB.get_saved_pidor()
+    if not saved_pidor:
+        response = 'Функция еще не реализована для используемого типа БД'
+    else:
+        current_epoch_days = (datetime.datetime.now() - datetime.datetime(1970,1,1)).days
+        if current_epoch_days > int(saved_pidor['epoch_days']):
+            users = DB.get_all_users()
+            pidor_id = random.choice(list(users.keys()))
+            pidor = users[pidor_id]
+            DB.set_pidor(user_id=pidor_id, name=pidor['name'], epoch_days=current_epoch_days)
+            response = f'Сегодня пидор дня - <b>{pidor["name"]}</b>!'
+        else:
+            response = f'Пидор дня сегодня уже был выбран, это <b>{saved_pidor["name"]}</b>!'
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 def run_telegram_app():
     print('running telegram app...')
@@ -355,7 +374,8 @@ def run_telegram_app():
         CommandHandler('gratz', gratz),
         CommandHandler('casino', casino),
         CommandHandler('lottery', lottery),
-        CommandHandler('prize', prize)
+        CommandHandler('prize', prize),
+        CommandHandler('pidor', pidor),
     ]
     _app.add_handlers(handlers=handlers)
     return _app
