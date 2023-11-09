@@ -1,3 +1,4 @@
+import datetime
 import time
 from pymongo import MongoClient
 from app.db_abstract import AbstractDatabase
@@ -14,14 +15,16 @@ class MongoDatabase(AbstractDatabase):
         db_name = 'gratzbot'
         users_collection_name = 'GUsers'
         bank_collection_name = 'Bank'
+        pidor_collection_name = 'Pidor'
 
         db = MongoClient(f'{host}:{port}',
-                        username=db_user,
-                        password=db_password,
-                        authSource=auth_source_db).get_database(db_name)
+                         username=db_user,
+                         password=db_password,
+                         authSource=auth_source_db).get_database(db_name)
 
         self.users_collection = db.get_collection(users_collection_name)
         self.bank_collection = db.get_collection(bank_collection_name)
+        self.pidor_collection = db.get_collection(pidor_collection_name)
 
     def get_user(self, user_id: str, user_name: str) -> GUser:
         user = self.users_collection.find_one({'_id': user_id})
@@ -104,3 +107,24 @@ class MongoDatabase(AbstractDatabase):
             self.set_gold_in_bank(0)
             return 0
         return int(gold['amount'])
+
+    def get_saved_lgbt_person(self) -> dict:
+        doc = self.pidor_collection.find_one({'_id': 'pidor'})
+        if not doc:
+            epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970,1,1)).days - 1
+            self.set_lgbt_person(user_id='unknown', name='unknown', epoch_days=epoch_days_yesterday)
+            return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
+        return doc
+
+    def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
+        self.pidor_collection.update_one(
+            filter={'_id': 'pidor'},
+            update={'$set': {'epoch_days': epoch_days, 'name': name}},
+            upsert=True
+        )
+        if user_id != 'pidor' and user_id != 'unknown':
+            self.pidor_collection.update_one(
+                filter={'_id': user_id},
+                update={'$inc': {'pidor_count': 1}, '$set': {'name': name}},
+                upsert=True
+            )
