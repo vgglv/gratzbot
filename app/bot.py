@@ -342,13 +342,14 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     sending_user = extract_user(update)
     gold_in_bank = DB.get_gold_from_bank()
+    initial_gold = sending_user.gold
 
     if gold_in_bank <= 0:
         response = f"<b>{sending_user.name}</b> в <b>призовом фонде</b> нет золота."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    if sending_user.gold < LOTTERY_COST:
+    if initial_gold < LOTTERY_COST:
         response = f"<b>{sending_user.name}</b> у вас нет денег на покупку лотерейного билета."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
@@ -372,7 +373,7 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
             DB.set_gold_in_bank(gold_in_bank)
 
     if sending_user.gold < LOTTERY_COST:
-        response = f"<b>{sending_user.name}</b> вы не выиграли.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
+        response = f"<b>{sending_user.name}</b> вы не выиграли и потратили {initial_gold - sending_user.gold}.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
 
     DB.update_user(sending_user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
