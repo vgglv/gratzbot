@@ -134,7 +134,7 @@ FAQ:\n
 
 * 1 Ферма генерит 1 золото каждый день.
 
-* <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол. 
+* <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол.
 
 * <b>collect</b> - собрать накопленное золото со всех ферм.
 
@@ -153,6 +153,8 @@ FAQ:\n
 * <b>casino N</b> - поставить N золотых на казино, шанс удвоить их равен {CASINO_SUCCESS_RATE}%, в противном случае ваше золото уходит в <b>призовой фонд лотереи</b>.
 
 * <b>lottery</b> - СТОИМОСТЬ: {LOTTERY_COST}. ШАНС успеха: {LOTTERY_SUCCESS_RATE}%. При выигрыше вы получаете <b>призовой фонд лотереи</b>.
+
+* <b>lottery_all</b> - играть в лоттерею до победного конца (или пока не закончится золото)
 
 * <b>prize</b> - СТОИМОСТЬ: 0, выводит текущий призовой фонд.
     '''
@@ -320,16 +322,57 @@ async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    sending_user.decrement_gold()
+    sending_user.decrement_gold(LOTTERY_COST)
 
     if app.utils.roll_for_success(LOTTERY_SUCCESS_RATE):
         sending_user.gold = sending_user.gold + gold_in_bank
         DB.set_gold_in_bank(0)
         response = f"<b>{sending_user.name}</b> ВЫ ВЫИГРАЛИ!!!!\n\n{get_stats(sending_user)}"
     else:
-        gold_in_bank = gold_in_bank + 1
+        gold_in_bank = gold_in_bank + LOTTERY_COST
         response = f"<b>{sending_user.name}</b> вы не выиграли.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
         DB.set_gold_in_bank(gold_in_bank)
+
+    DB.update_user(sending_user)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
+async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_correct_chat(update):
+        return
+
+    sending_user = extract_user(update)
+    gold_in_bank = DB.get_gold_from_bank()
+
+    if gold_in_bank <= 0:
+        response = f"<b>{sending_user.name}</b> в <b>призовом фонде</b> нет золота."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    if sending_user.gold < LOTTERY_COST:
+        response = f"<b>{sending_user.name}</b> у вас нет денег на покупку лотерейного билета."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+        return
+
+    sending_user.decrement_gold(LOTTERY_COST)
+    tries_count = 0
+    lottery_won = False
+
+    while not lottery_won and sending_user.gold >= LOTTERY_COST:
+        gold_in_bank = DB.get_gold_from_bank()
+
+        if app.utils.roll_for_success(LOTTERY_SUCCESS_RATE):
+            lottery_won = True
+            tries_count += 1
+            sending_user.gold = sending_user.gold + gold_in_bank
+            DB.set_gold_in_bank(0)
+            response = f"<b>{sending_user.name}</b> ВЫ ВЫИГРАЛИ!!!!\nКоличество попыток: {tries_count}\n\n{get_stats(sending_user)}"
+        else:
+            tries_count += 1
+            gold_in_bank = gold_in_bank + LOTTERY_COST
+            DB.set_gold_in_bank(gold_in_bank)
+
+    if sending_user.gold < LOTTERY_COST:
+        response = f"<b>{sending_user.name}</b> вы не выиграли.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
 
     DB.update_user(sending_user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
@@ -378,6 +421,7 @@ def run_telegram_app():
         CommandHandler('gratz', gratz),
         CommandHandler('casino', casino),
         CommandHandler('lottery', lottery),
+        CommandHandler('lottery_all', lottery_all),
         CommandHandler('prize', prize),
         CommandHandler('pidor', lgbt_person),
     ]
