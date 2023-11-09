@@ -89,7 +89,7 @@ class FirebaseDatabase(AbstractDatabase):
             return 0
         return int(gold["amount"])
 
-    def get_saved_lgbt_person(self) -> dict[str, str | int] | object:
+    def get_saved_lgbt_person(self) -> dict:
         lgbt_person = db.reference("/lgbt/person").get()
         if not lgbt_person:
             epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days - 1
