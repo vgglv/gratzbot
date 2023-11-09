@@ -108,15 +108,15 @@ class MongoDatabase(AbstractDatabase):
             return 0
         return int(gold['amount'])
 
-    def get_saved_pidor(self) -> dict:
+    def get_saved_lgbt_person(self) -> dict:
         doc = self.pidor_collection.find_one({'_id': 'pidor'})
         if not doc:
             epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970,1,1)).days - 1
-            self.set_pidor(user_id='unknown', name='unknown', epoch_days=epoch_days_yesterday)
+            self.set_lgbt_person(user_id='unknown', name='unknown', epoch_days=epoch_days_yesterday)
             return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
         return doc
 
-    def set_pidor(self, user_id: str, name: str, epoch_days: int) -> None:
+    def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
         self.pidor_collection.update_one(
             filter={'_id': 'pidor'},
             update={'$set': {'epoch_days': epoch_days, 'name': name}},

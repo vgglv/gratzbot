@@ -20,6 +20,8 @@ LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
 
 DB = FirebaseDatabase()
+
+
 # DB = MongoDatabase()
 
 
@@ -340,23 +342,25 @@ async def prize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = f"Призовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
-async def pidor(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def lgbt_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
-    saved_pidor = DB.get_saved_pidor()
-    if not saved_pidor:
+    saved_lgbt_person = DB.get_saved_lgbt_person()
+    if not saved_lgbt_person:
         response = 'Функция еще не реализована для используемого типа БД'
     else:
-        current_epoch_days = (datetime.datetime.now() - datetime.datetime(1970,1,1)).days
-        if current_epoch_days > int(saved_pidor['epoch_days']):
+        current_epoch_days = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days
+        if current_epoch_days > int(saved_lgbt_person['epoch_days']):
             users = DB.get_all_users()
-            pidor_id = random.choice(list(users.keys()))
-            pidor = users[pidor_id]
-            DB.set_pidor(user_id=pidor_id, name=pidor['name'], epoch_days=current_epoch_days)
-            response = f'Сегодня пидор дня - <b>{pidor["name"]}</b>!'
+            lgbt_person_id = random.choice(list(users.keys()))
+            current_lgbt_person = users[lgbt_person_id]
+            DB.set_lgbt_person(user_id=lgbt_person_id, name=current_lgbt_person['name'], epoch_days=current_epoch_days)
+            response = f'Сегодня пидор дня - <b>{current_lgbt_person["name"]}</b>!'
         else:
-            response = f'Пидор дня сегодня уже был выбран, это <b>{saved_pidor["name"]}</b>!'
+            response = f'Пидор дня сегодня уже был выбран, это <b>{saved_lgbt_person["name"]}</b>!'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
 
 def run_telegram_app():
     print('running telegram app...')
@@ -375,7 +379,7 @@ def run_telegram_app():
         CommandHandler('casino', casino),
         CommandHandler('lottery', lottery),
         CommandHandler('prize', prize),
-        CommandHandler('pidor', pidor),
+        CommandHandler('pidor', lgbt_person),
     ]
     _app.add_handlers(handlers=handlers)
     return _app

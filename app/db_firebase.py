@@ -1,6 +1,9 @@
 import base64
+import datetime
 from os import getenv
 import time
+from typing import Dict
+
 from app.db_abstract import AbstractDatabase
 import firebase_admin
 from firebase_admin import db
@@ -86,8 +89,22 @@ class FirebaseDatabase(AbstractDatabase):
             return 0
         return int(gold["amount"])
 
-    def get_saved_pidor(self) -> dict:
-        return None
+    def get_saved_lgbt_person(self) -> dict[str, str | int] | object:
+        lgbt_person = db.reference("/lgbt/person").get()
+        if not lgbt_person:
+            epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days - 1
+            return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
+        return lgbt_person
 
-    def set_pidor(self, user_id: str, name: str, epoch_days: int) -> None:
-        pass
+    def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
+        db.reference("/lgbt/person").set({
+          "epoch_days": epoch_days,
+          "name": name
+        })
+        prev_count = db.reference(f"lgbt/stats/{user_id}/count").get()
+        if not prev_count:
+            prev_count = 0
+        db.reference(f"/lgbt/stats/{user_id}").set({
+            "count": prev_count + 1,
+            "name": name
+        })

@@ -33,9 +33,9 @@ class AbstractDatabase(ABC):
         pass
 
     @abstractmethod
-    def get_saved_pidor(self) -> dict:
+    def get_saved_lgbt_person(self) -> dict:
         pass
 
     @abstractmethod
-    def set_pidor(self, user_id: str, name: str, epoch_days: int) -> None:
+    def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
         pass
