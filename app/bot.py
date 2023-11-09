@@ -354,12 +354,11 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
 
-    sending_user.decrement_gold(LOTTERY_COST)
     tries_count = 0
     lottery_won = False
 
     while not lottery_won and sending_user.gold >= LOTTERY_COST:
-        gold_in_bank = DB.get_gold_from_bank()
+        sending_user.decrement_gold(LOTTERY_COST)
 
         if app.utils.roll_for_success(LOTTERY_SUCCESS_RATE):
             lottery_won = True
@@ -370,9 +369,10 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             tries_count += 1
             gold_in_bank = gold_in_bank + LOTTERY_COST
-            DB.set_gold_in_bank(gold_in_bank)
+
 
     if sending_user.gold < LOTTERY_COST:
+        DB.set_gold_in_bank(gold_in_bank)
         response = f"<b>{sending_user.name}</b> вы не выиграли и потратили {initial_gold - sending_user.gold}.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {app.utils.declensed_gold(gold_in_bank)}!"
 
     DB.update_user(sending_user)
