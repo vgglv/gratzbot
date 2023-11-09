@@ -18,8 +18,8 @@ class GUser:
     def increment_gold(self):
         self.gold = self.gold + 1
 
-    def decrement_gold(self):
-        self.gold = self.gold - 1
+    def decrement_gold(self, amount: int = 1):
+        self.gold = self.gold - amount
 
     def set_user_id(self, user_id: str):
         self.user_id = user_id
