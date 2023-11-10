@@ -3,8 +3,8 @@ import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
+# from app.db_csv import CSVDatabase
 from app.db_firebase import FirebaseDatabase
-from app.db_mongo import MongoDatabase
 import app.utils
 from app.user import GUser
 import time
@@ -22,7 +22,7 @@ LOTTERY_SUCCESS_RATE = 3
 DB = FirebaseDatabase()
 
 
-# DB = MongoDatabase()
+# DB = CSVDatabase()
 
 
 def get_stats(user: GUser):
