@@ -3,7 +3,7 @@ import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
-from app.db_csv import CSVDatabase
+# from app.db_csv import CSVDatabase
 from app.db_firebase import FirebaseDatabase
 from app.utils import *
 from app.user import GUser
