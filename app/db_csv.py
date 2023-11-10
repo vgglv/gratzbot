@@ -70,15 +70,28 @@ class CSVDatabase(AbstractDatabase):
         self.__set_gold_in_bank(gold)
 
     def get_gold_from_bank(self) -> int:
-        return self.__get_gold_from_bank()
+        _dict = self.__get_csv_as_dict(self.bank_csv_path, int)
+        return int(_dict[0]['amount'])
 
     def get_saved_lgbt_person(self) -> dict:
-        return self.__get_saved_lgbt_person()
+        dict = self.__get_csv_as_dict(self.lgbt_person_csv_path, int)
+        return dict[0]
 
     def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
-        self.__set_lgbt_person(user_id, name, epoch_days)
+        lgbt_person_dict = {0: {'name': name, 'epoch_days': epoch_days}}
+        self.__save_dict_as_csv(lgbt_person_dict, self.lgbt_person_csv_path)
 
-    
+        lgbt_stats_dict = self.__get_csv_as_dict(self.lgbt_stats_csv_path, str)
+        record = lgbt_stats_dict.get(user_id, None)
+        if not record:
+            record = {'user_id': user_id, 'name': name, 'count': 1}
+        else:
+            record['name'] = name
+            record['count'] += 1
+        lgbt_stats_dict[user_id] = record
+        self.__save_dict_as_csv(lgbt_stats_dict, self.lgbt_stats_csv_path)
+
+
     # private methods below
 
 
@@ -101,29 +114,7 @@ class CSVDatabase(AbstractDatabase):
 
     def __save_users_dict(self, d: dict) -> None:
         self.__save_dict_as_csv(d, self.users_csv_path)
-    
-    def __get_gold_from_bank(self) -> int:
-        _dict = self.__get_csv_as_dict(self.bank_csv_path, int)
-        return int(_dict[0]['amount'])
 
     def __set_gold_in_bank(self, gold: int) -> None:
         _dict = {0: {'amount': gold}}
         self.__save_dict_as_csv(_dict, self.bank_csv_path)
-    
-    def __get_saved_lgbt_person(self) -> dict[str, any]:
-        dict = self.__get_csv_as_dict(self.lgbt_person_csv_path, int)
-        return dict[0]
-
-    def __set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
-        lgbt_person_dict = {0: {'name': name, 'epoch_days': epoch_days}}
-        self.__save_dict_as_csv(lgbt_person_dict, self.lgbt_person_csv_path)
-
-        lgbt_stats_dict = self.__get_csv_as_dict(self.lgbt_stats_csv_path, str)
-        record = lgbt_stats_dict.get(user_id, None)
-        if not record:
-            record = {'user_id': user_id, 'name': name, 'count': 1}
-        else:
-            record['name'] = name
-            record['count'] += 1
-        lgbt_stats_dict[user_id] = record
-        self.__save_dict_as_csv(lgbt_stats_dict, self.lgbt_stats_csv_path)
