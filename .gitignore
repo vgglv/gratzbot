@@ -6,3 +6,5 @@ __pycache__
 .vercel
 .idea
 csv/
+run.bat
+run_local.bat

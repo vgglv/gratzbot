@@ -25,26 +25,9 @@ class MongoDatabase(AbstractDatabase):
         self.users_collection = db.get_collection(users_collection_name)
         self.bank_collection = db.get_collection(bank_collection_name)
         self.pidor_collection = db.get_collection(pidor_collection_name)
-
-    def get_user(self, user_id: str, user_name: str) -> GUser:
-        user = self.users_collection.find_one({'_id': user_id})
-        print(f'getting user {user_id}, value: {user}')
-        if not user:
-            print('user not exist, creating user...')
-            user = self.create_user(user_id, user_name)
-            print(f'created user: {user}')
-        
-        if 'gold' not in user:
-            user['gold'] = 0
-        
-        result = GUser(
-            user_id=user_id,
-            name=user_name,
-            gold=user['gold'],
-            farm=user['farm'],
-            saved_date=user['saved_date']
-        )
-        return result
+    
+    def get_user_or_none(self, user_id: str) -> dict[str, any]:
+        return self.users_collection.find_one({'_id': user_id})
 
     def update_user(self, user: GUser) -> None:
         self.users_collection.update_one(
@@ -71,16 +54,6 @@ class MongoDatabase(AbstractDatabase):
         }
         self.users_collection.insert_one(user_data)
         return user_data
-
-    def set_user_data(self, user: GUser) -> None:
-        value = {
-            '_id': user.user_id,
-            'name': user.name,
-            'gold': user.gold,
-            'farm': user.farm,
-            'saved_date': user.saved_date
-        }
-        self.users_collection.replace_one(value)
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
         _dict = {}
@@ -112,7 +85,6 @@ class MongoDatabase(AbstractDatabase):
         doc = self.pidor_collection.find_one({'_id': 'pidor'})
         if not doc:
             epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970,1,1)).days - 1
-            self.set_lgbt_person(user_id='unknown', name='unknown', epoch_days=epoch_days_yesterday)
             return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
         return doc
 
@@ -122,7 +94,7 @@ class MongoDatabase(AbstractDatabase):
             update={'$set': {'epoch_days': epoch_days, 'name': name}},
             upsert=True
         )
-        if user_id != 'pidor' and user_id != 'unknown':
+        if user_id != 'pidor':
             self.pidor_collection.update_one(
                 filter={'_id': user_id},
                 update={'$inc': {'pidor_count': 1}, '$set': {'name': name}},

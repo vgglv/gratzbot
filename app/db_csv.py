@@ -32,37 +32,22 @@ class CSVDatabase(AbstractDatabase):
         if not Path(f'{self.lgbt_stats_csv_path}').is_file():
             df = pd.DataFrame(columns = ['key', 'user_id', 'name', 'count']).set_index('key')
             df.to_csv(self.lgbt_stats_csv_path, quoting=csv.QUOTE_NONNUMERIC)
-
-    def get_user(self, user_id: str, user_name: str) -> GUser:
-        dict = self.__get_users_dict()
-        user = dict.get(user_id, None)
-        print(f'getting user {user_id}, value: {user}')
-        if not user:
-            print('user not exist, creating user...')
-            user = self.create_user(user_id, user_name)
-            print(f'created user: {user}')
-        if 'gold' not in user:
-            user['gold'] = 0
-        result = GUser(
-            user_id=user_id,
-            name=user_name,
-            gold=user['gold'],
-            farm=user['farm'],
-            saved_date=user['saved_date']
-        )
-        return result
+    
+    def get_user_or_none(self, user_id: str) -> dict[str, any]:
+        _dict = self.__get_users_dict()
+        return _dict.get(user_id, None)
 
     def update_user(self, user: GUser) -> None:
-        dict = self.__get_users_dict()
-        existing_user = dict.get(user.user_id, None)
+        _dict = self.__get_users_dict()
+        existing_user = _dict.get(user.user_id, None)
         if existing_user:
             existing_user['user_id'] = user.user_id
             existing_user['name'] = user.name
             existing_user['gold'] = user.gold
             existing_user['farm'] = user.farm
             existing_user['saved_date'] = user.saved_date
-            dict[user.user_id] = existing_user
-            self.__save_users_dict(dict)
+            _dict[user.user_id] = existing_user
+            self.__save_users_dict(_dict)
 
     def create_user(self, user_id: str, name: str) -> dict[str, any]:
         current_timestamp = int(time.time())
@@ -73,21 +58,10 @@ class CSVDatabase(AbstractDatabase):
             'farm': 1,
             'saved_date': current_timestamp
         }
-        dict = self.__get_users_dict()
-        dict[user_id] = user_data.copy()
-        self.__save_users_dict(dict)
+        _dict = self.__get_users_dict()
+        _dict[user_id] = user_data.copy()
+        self.__save_users_dict(_dict)
         return user_data
-
-    def set_user_data(self, user: GUser) -> None:
-        dict = self.__get_users_dict()
-        existing_user = dict.get(user.user_id, None)
-        if existing_user:
-            existing_user['name'] = user.name
-            existing_user['gold'] = user.gold
-            existing_user['farm'] = user.farm
-            existing_user['saved_date'] = user.saved_date
-            dict[user.user_id] = existing_user
-            self.__save_users_dict(dict)
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
         return self.__get_users_dict()
@@ -115,11 +89,11 @@ class CSVDatabase(AbstractDatabase):
                            converters={'key': keyConverter}).convert_dtypes().set_index('key').to_dict(orient='index')
 
     def __save_dict_as_csv(self, d: dict, path: str) -> None:
-        dict = {}
+        _dict = {}
         for key, value in d.items():
-            dict[key] = value
-            dict[key]['key'] = key
-        df = pd.DataFrame().from_dict(dict, orient='index').set_index('key')
+            _dict[key] = value
+            _dict[key]['key'] = key
+        df = pd.DataFrame().from_dict(_dict, orient='index').set_index('key')
         df.to_csv(path, quoting=csv.QUOTE_NONNUMERIC)
 
     def __get_users_dict(self) -> dict[str, dict[str, any]]:
@@ -129,12 +103,12 @@ class CSVDatabase(AbstractDatabase):
         self.__save_dict_as_csv(d, self.users_csv_path)
     
     def __get_gold_from_bank(self) -> int:
-        dict = self.__get_csv_as_dict(self.bank_csv_path, int)
-        return int(dict[0]['amount'])
+        _dict = self.__get_csv_as_dict(self.bank_csv_path, int)
+        return int(_dict[0]['amount'])
 
     def __set_gold_in_bank(self, gold: int) -> None:
-        dict = {0: {'amount': gold}}
-        self.__save_dict_as_csv(dict, self.bank_csv_path)
+        _dict = {0: {'amount': gold}}
+        self.__save_dict_as_csv(_dict, self.bank_csv_path)
     
     def __get_saved_lgbt_person(self) -> dict[str, any]:
         dict = self.__get_csv_as_dict(self.lgbt_person_csv_path, int)

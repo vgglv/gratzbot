@@ -27,25 +27,8 @@ class FirebaseDatabase(AbstractDatabase):
         })
         self.default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
 
-    def get_user(self, user_id: str, user_name: str) -> GUser:
-        user = db.reference(f"/Users/{user_id}").get()
-        print(f"getting user {user_id}, value: {user}")
-        if not user:
-            print("user not exist, creating user...")
-            user = self.create_user(user_id, user_name)
-            print(f"created user: {user}")
-
-        if "gold" not in user:
-            user["gold"] = 0
-
-        result = GUser(
-            user_id=user_id,
-            name=user_name,
-            gold=user["gold"],
-            farm=user["farm"],
-            saved_date=user["saved_date"]
-        )
-        return result
+    def get_user_or_none(self, user_id: str) -> dict[str, any]:
+        return db.reference(f"/Users/{user_id}").get()
 
     def update_user(self, user: GUser) -> None:
         value = {
@@ -66,15 +49,6 @@ class FirebaseDatabase(AbstractDatabase):
         }
         db.reference("/Users/").child(user_id).set(user_data)
         return user_data
-
-    def set_user_data(self, user: GUser) -> None:
-        value = {
-            "name": user.name,
-            "gold": user.gold,
-            "farm": user.farm,
-            "saved_date": user.saved_date
-        }
-        db.reference(f"/Users/{user.user_id}").set(value)
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
         return db.reference("/Users/").get()
