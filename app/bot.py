@@ -5,7 +5,6 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
 from app.db_csv import CSVDatabase
 from app.db_firebase import FirebaseDatabase
-from app.db_mongo import MongoDatabase
 from app.utils import *
 from app.user import GUser
 import time
@@ -20,10 +19,10 @@ CASINO_SUCCESS_RATE = 33
 LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
 
-# D0B = FirebaseDatabase()
+DB = FirebaseDatabase()
 
 
-DB = MongoDatabase()
+# DB = CSVDatabase()
 
 
 def get_stats(user: GUser):
