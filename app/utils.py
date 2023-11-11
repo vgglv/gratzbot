@@ -33,7 +33,6 @@ def items_to_html(items, users) -> str:
         _list.append(f"{place}. <b>{name}</b> - {gold} {declensed_gold(gold)}, {farm} {declensed_farm(farm)}.")
     return "\n".join(_list)
 
-
 def roll_for_success(success_rate):
     roll_result = random.randint(1, 100)
 

@@ -9,6 +9,7 @@ import firebase_admin
 from firebase_admin import db
 
 from app.user import GUser
+from app.artifacts import Artifact
 
 
 class FirebaseDatabase(AbstractDatabase):
@@ -26,6 +27,7 @@ class FirebaseDatabase(AbstractDatabase):
             "token_uri": getenv("FIREBASE_TOKEN_URI")
         })
         self.default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
+        self.artifacts_json = db.reference("/artifact").get()
 
     def get_user(self, user_id: str, user_name: str) -> GUser:
         user = db.reference(f"/Users/{user_id}").get()
@@ -38,12 +40,17 @@ class FirebaseDatabase(AbstractDatabase):
         if "gold" not in user:
             user["gold"] = 0
 
+        artifacts = []
+        if "artifacts" in user:
+            artifacts = user["artifacts"]
+
         result = GUser(
             user_id=user_id,
             name=user_name,
             gold=user["gold"],
             farm=user["farm"],
-            saved_date=user["saved_date"]
+            saved_date=user["saved_date"],
+            artifacts=artifacts
         )
         return result
 
@@ -52,7 +59,8 @@ class FirebaseDatabase(AbstractDatabase):
             "name": user.name,
             "gold": user.gold,
             "farm": user.farm,
-            "saved_date": user.saved_date
+            "saved_date": user.saved_date,
+            "artifacts": user.artifacts
         }
         db.reference(f"/Users/{user.user_id}").update(value)
 
@@ -62,17 +70,22 @@ class FirebaseDatabase(AbstractDatabase):
             "name": name,
             "gold": 5,
             "farm": 1,
-            "saved_date": current_timestamp
+            "saved_date": current_timestamp,
+            "artifacts": []
         }
         db.reference("/Users/").child(user_id).set(user_data)
         return user_data
 
     def set_user_data(self, user: GUser) -> None:
+        artifacts = []
+        for artifact in artifacts:
+            artifacts.append(artifact.to_dict())
         value = {
             "name": user.name,
             "gold": user.gold,
             "farm": user.farm,
-            "saved_date": user.saved_date
+            "saved_date": user.saved_date,
+            "artifacts": artifacts
         }
         db.reference(f"/Users/{user.user_id}").set(value)
 
@@ -98,8 +111,8 @@ class FirebaseDatabase(AbstractDatabase):
 
     def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
         db.reference("/lgbt/person").set({
-          "epoch_days": epoch_days,
-          "name": name
+            "epoch_days": epoch_days,
+            "name": name
         })
         prev_count = db.reference(f"lgbt/stats/{user_id}/count").get()
         if not prev_count:
