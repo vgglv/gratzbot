@@ -1,8 +1,10 @@
 import time
+from app.artifacts import Artifact
 
 
 class GUser:
-    def __init__(self, user_id: str, name: str, gold: int = 5, farm: int = 1, saved_date: int = None) -> None:
+    def __init__(self, user_id: str, name: str, gold: int = 5, farm: int = 1, saved_date: int = None,
+                 artifacts: [Artifact] = None) -> None:
         self.user_id = user_id
         self.name = name
         self.gold = gold
@@ -11,6 +13,11 @@ class GUser:
             self.saved_date = int(time.time())
         else:
             self.saved_date = saved_date
+
+        if not artifacts:
+            self.artifacts = []
+        else:
+            self.artifacts = artifacts
 
     def is_gold_zero(self) -> bool:
         return self.gold <= 0
@@ -35,3 +42,12 @@ class GUser:
 
     def set_saved_date(self, saved_date: int):
         self.saved_date = saved_date
+
+    def have_this_artifact(self, artifact_id: str) -> bool:
+        for artifact in self.artifacts:
+            if artifact == artifact_id:
+                return True
+        return False
+
+    def append_artifact(self, artifact: any):
+        self.artifacts.append(artifact)
