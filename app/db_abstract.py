@@ -17,10 +17,6 @@ class AbstractDatabase(ABC):
         pass
 
     @abstractmethod
-    def set_user_data(self, user: GUser) -> None:
-        pass
-
-    @abstractmethod
     def get_all_users(self) -> dict[str, dict[str, any]]:
         pass
 

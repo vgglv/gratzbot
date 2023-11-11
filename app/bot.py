@@ -5,6 +5,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
 # from app.db_csv import CSVDatabase
 from app.db_firebase import FirebaseDatabase
+# from app.db_json import JsonDatabase
 from app import utils
 from app.user import GUser
 import time
@@ -21,9 +22,8 @@ LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
 
 DB = FirebaseDatabase()
-
-
 # DB = CSVDatabase()
+# DB = JsonDatabase()
 
 
 def get_stats(user: GUser):
@@ -151,32 +151,21 @@ async def faq(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = f'''
 FAQ:\n
 * У каждого пользователя в начале выдается 5 золотых и 1 Ферма.
-
 * 1 Ферма генерит 1 золото каждый день.
-
 * <b>buy_farm</b> - СТОИМОСТЬ: {FARM_PRICE} зол.
-
 * <b>collect</b> - собрать накопленное золото со всех ферм.
-
 * <b>gratz</b> - подарить кому-то 1 золото
-
 * <b>give N</b> - подарить N кол-во золота тому, кого реплаим.
-
 * <b>top</b> - выведет доску лидеров, у кого больше всех золота на данный момент.
-
 * <b>stats</b> - узнать свои статы.
-
 * <b>attack</b> - СТОИМОСТЬ: {ATTACK_COST}. ОПИСАНИЕ: совершить набег на того, кому реплаим. ШАНС успеха = {ATTACK_SUCCESS_RATE}%. При успешном набеге у оппонента отжимается 1 ферма и передается вам, в противном случае, ваша ферма отдается оппоненту. Нельзя использовать против тех, у кого только 1 ферма.
-
 * <b>steal</b> - СТОИМОСТЬ: 0, ОПИСАНИЕ: украсть золото у того, кому реплаим. ШАНС успеха = {STEAL_SUCCESS_RATE}%. При провале у вас отнимается золото и отдается тому, у кого вы пытались украсть. При успешной краже, вы крадете 1 золото.
-
 * <b>casino N</b> - поставить N золотых на казино, шанс удвоить их равен {CASINO_SUCCESS_RATE}%, в противном случае ваше золото уходит в <b>призовой фонд лотереи</b>.
-
 * <b>lottery</b> - СТОИМОСТЬ: {LOTTERY_COST}. ШАНС успеха: {LOTTERY_SUCCESS_RATE}%. При выигрыше вы получаете <b>призовой фонд лотереи</b>.
-
 * <b>lottery_all</b> - играть в лотерею до победного конца (или пока не закончится золото)
-
 * <b>prize</b> - СТОИМОСТЬ: 0, выводит текущий призовой фонд.
+* <b>artifacts</b> - вывести список артефактов доступных к покупке.
+* <b>buy_artifact N</b> - купить артефакт N, где N это айди артефакта.
     '''
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 

@@ -16,6 +16,7 @@ class MongoDatabase(AbstractDatabase):
         users_collection_name = 'GUsers'
         bank_collection_name = 'Bank'
         pidor_collection_name = 'Pidor'
+        artifacts_collection_name = 'Artifacts'
 
         db = MongoClient(f'{host}:{port}',
                          username=db_user,
@@ -25,6 +26,8 @@ class MongoDatabase(AbstractDatabase):
         self.users_collection = db.get_collection(users_collection_name)
         self.bank_collection = db.get_collection(bank_collection_name)
         self.pidor_collection = db.get_collection(pidor_collection_name)
+        # idk how to do this
+        # self.artifacts_json = db.get_collection(artifacts_collection_name)
 
     def get_user(self, user_id: str, user_name: str) -> GUser:
         user = self.users_collection.find_one({'_id': user_id})
@@ -71,16 +74,6 @@ class MongoDatabase(AbstractDatabase):
         }
         self.users_collection.insert_one(user_data)
         return user_data
-
-    def set_user_data(self, user: GUser) -> None:
-        value = {
-            '_id': user.user_id,
-            'name': user.name,
-            'gold': user.gold,
-            'farm': user.farm,
-            'saved_date': user.saved_date
-        }
-        self.users_collection.replace_one(value)
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
         _dict = {}

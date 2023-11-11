@@ -78,17 +78,6 @@ class CSVDatabase(AbstractDatabase):
         self.__save_users_dict(dict)
         return user_data
 
-    def set_user_data(self, user: GUser) -> None:
-        dict = self.__get_users_dict()
-        existing_user = dict.get(user.user_id, None)
-        if existing_user:
-            existing_user['name'] = user.name
-            existing_user['gold'] = user.gold
-            existing_user['farm'] = user.farm
-            existing_user['saved_date'] = user.saved_date
-            dict[user.user_id] = existing_user
-            self.__save_users_dict(dict)
-
     def get_all_users(self) -> dict[str, dict[str, any]]:
         return self.__get_users_dict()
 

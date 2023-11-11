@@ -1,39 +1,24 @@
-import base64
-import datetime
-from os import getenv
 import time
-
 from app.db_abstract import AbstractDatabase
-import firebase_admin
-from firebase_admin import db
-
 from app.user import GUser
+import json
+import datetime
 
 
-class FirebaseDatabase(AbstractDatabase):
+class JsonDatabase(AbstractDatabase):
     def __init__(self):
-        private_key_encoded = getenv("FIREBASE_PRIVATE_KEY")
-        private_key_encoded_bytes = private_key_encoded.encode('ascii')
-        private_key_decoded_bytes = base64.b64decode(private_key_encoded_bytes)
-        private_key_string = private_key_decoded_bytes.decode('ascii')
-
-        cred = firebase_admin.credentials.Certificate({
-            "type": "service_account",
-            "project_id": getenv("FIREBASE_PROJECT_ID"),
-            "client_email": getenv("FIREBASE_CLIENT_EMAIL"),
-            "private_key": private_key_string,
-            "token_uri": getenv("FIREBASE_TOKEN_URI")
-        })
-        self.default_app = firebase_admin.initialize_app(cred, {'databaseURL': getenv("db_url")})
-        self.artifacts_json = db.reference("/artifact").get()
+        with open('dummy_db.json') as f:
+            self.db = json.load(f)
+            f.close()
+        self.artifacts_json = self.db["artifact"]
 
     def get_user(self, user_id: str, user_name: str) -> GUser:
-        user = db.reference(f"/Users/{user_id}").get()
-        print(f"getting user {user_id}, value: {user}")
-        if not user:
+        if user_id not in self.db["Users"]:
             print("user not exist, creating user...")
             user = self.create_user(user_id, user_name)
             print(f"created user: {user}")
+        else:
+            user = self.db["Users"][user_id]
 
         if "gold" not in user:
             user["gold"] = 0
@@ -60,7 +45,8 @@ class FirebaseDatabase(AbstractDatabase):
             "saved_date": user.saved_date,
             "artifacts": user.artifacts
         }
-        db.reference(f"/Users/{user.user_id}").update(value)
+        self.db["Users"][user.user_id] = value
+        self.save_json()
 
     def create_user(self, user_id: str, name: str) -> dict[str, any]:
         current_timestamp = int(time.time())
@@ -71,38 +57,42 @@ class FirebaseDatabase(AbstractDatabase):
             "saved_date": current_timestamp,
             "artifacts": []
         }
-        db.reference("/Users/").child(user_id).set(user_data)
+        self.db["Users"][user_id] = user_data
+        self.save_json()
         return user_data
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
-        return db.reference("/Users/").get()
+        return self.db["Users"]
 
     def set_gold_in_bank(self, gold: int) -> None:
-        db.reference("/bank/gold").child("amount").set(gold)
+        self.db["bank"]["gold"]["amount"] = gold
+        self.save_json()
 
     def get_gold_from_bank(self) -> int:
-        gold = db.reference("/bank/gold").get()
-        if not gold:
-            db.reference("/bank/gold").child("amount").set(0)
-            return 0
-        return int(gold["amount"])
+        return int(self.db["bank"]["gold"]["amount"])
 
     def get_saved_lgbt_person(self) -> dict:
-        lgbt_person = db.reference("/lgbt/person").get()
+        lgbt_person = self.db["lgbt"]["person"]
         if not lgbt_person:
             epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days - 1
             return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
         return lgbt_person
 
     def set_lgbt_person(self, user_id: str, name: str, epoch_days: int) -> None:
-        db.reference("/lgbt/person").set({
+        self.db["lgbt"]["person"] = {
             "epoch_days": epoch_days,
             "name": name
-        })
-        prev_count = db.reference(f"lgbt/stats/{user_id}/count").get()
+        }
+        prev_count = self.db["lgbt"]["stats"][user_id]["count"]
         if not prev_count:
             prev_count = 0
-        db.reference(f"/lgbt/stats/{user_id}").set({
+        self.db["lgbt"]["stats"][user_id] = {
             "count": prev_count + 1,
             "name": name
-        })
+        }
+        self.save_json()
+
+    def save_json(self):
+        with open('dummy_db.json', 'w') as f:
+            json.dump(self.db, f)
+            f.close()
