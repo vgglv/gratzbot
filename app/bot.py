@@ -314,7 +314,7 @@ async def casino(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if utils.roll_for_success(roll_rate):
         big_money = gold_am * 2
         sending_user.set_gold(sending_user.gold + big_money - gold_am)
-        response = f"<b>{sending_user.name}</b> ВЫ СОРВАЛИ КУШ! Вы получаете {big_money}! (шанс был: {roll_rate}%)\n\n{get_stats(sending_user)}"
+        response = f"<b>{sending_user.name}</b> ВЫ СОРВАЛИ КУШ! Вы получаете {big_money} {utils.declensed_gold(big_money)}! (шанс был: {roll_rate}%)\n\n{get_stats(sending_user)}"
     else:
         sending_user.set_gold(sending_user.gold - gold_am)
         current_g = DB.get_gold_from_bank() + gold_am
@@ -393,7 +393,7 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if sending_user.gold < LOTTERY_COST:
         DB.set_gold_in_bank(gold_in_bank)
-        response = f"<b>{sending_user.name}</b> вы не выиграли и потратили {initial_gold - sending_user.gold}.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {utils.declensed_gold(gold_in_bank)}!"
+        response = f"<b>{sending_user.name}</b> вы не выиграли и потратили {initial_gold - sending_user.gold} {utils.declensed_gold(initial_gold - sending_user.gold)}.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {utils.declensed_gold(gold_in_bank)}!"
 
     DB.update_user(sending_user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
@@ -452,7 +452,7 @@ async def buy_artifact(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if user.gold < artifact.price:
-        response = f"Артефакт стоит {artifact.price}, у вас {user.gold}. Попробуйте снова когда у вас будет достаточно золота."
+        response = f"Артефакт стоит {artifact.price} {utils.declensed_gold(artifact.price)}, у вас {user.gold} {utils.declensed_gold(user.gold)}. Попробуйте снова когда у вас будет достаточно золота."
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
         return
 
