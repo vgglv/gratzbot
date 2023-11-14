@@ -1,6 +1,6 @@
 import datetime
 import random
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from os import getenv
 # from app.db_csv import CSVDatabase
@@ -38,6 +38,8 @@ def get_stats(user: GUser):
 
 
 def is_correct_chat(update: Update):
+    if not isinstance(update.message, Message):
+        return False
     chat_id = int(getenv("CHAT_ID"))
     return update.effective_chat.id == chat_id
 
