@@ -8,6 +8,7 @@ import firebase_admin
 from firebase_admin import db
 
 from app.user import GUser
+from app.utils import get_today
 
 
 class FirebaseDatabase(AbstractDatabase):
@@ -63,12 +64,11 @@ class FirebaseDatabase(AbstractDatabase):
         db.reference(f"/Users/{user.user_id}").update(value)
 
     def create_user(self, user_id: str, name: str) -> dict[str, any]:
-        current_timestamp = int(time.time())
         user_data = {
             "name": name,
             "gold": 5,
             "farm": 1,
-            "saved_date": current_timestamp,
+            "saved_date": get_today() - 1,
             "artifacts": []
         }
         db.reference("/Users/").child(user_id).set(user_data)
@@ -90,7 +90,7 @@ class FirebaseDatabase(AbstractDatabase):
     def get_saved_lgbt_person(self) -> dict:
         lgbt_person = db.reference("/lgbt/person").get()
         if not lgbt_person:
-            epoch_days_yesterday = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days - 1
+            epoch_days_yesterday = get_today() - 1
             return {'epoch_days': epoch_days_yesterday, 'name': 'unknown'}
         return lgbt_person
 
