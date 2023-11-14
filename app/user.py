@@ -1,5 +1,6 @@
 import time
 from app.artifacts import Artifact
+from app.utils import get_today
 
 
 class GUser:
@@ -10,7 +11,7 @@ class GUser:
         self.gold = gold
         self.farm = farm
         if not saved_date:
-            self.saved_date = int(time.time())
+            self.saved_date = get_today()
         else:
             self.saved_date = saved_date
 

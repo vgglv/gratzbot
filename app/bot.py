@@ -1,4 +1,3 @@
-import datetime
 import random
 from telegram import Update, Message
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
@@ -16,7 +15,6 @@ ATTACK_COST = 20
 ATTACK_SUCCESS_RATE = 50
 STEAL_COST = 1
 STEAL_SUCCESS_RATE = 30
-FARM_COOLDOWN = 86400
 CASINO_SUCCESS_RATE = 33
 LOTTERY_COST = 1
 LOTTERY_SUCCESS_RATE = 3
@@ -210,27 +208,23 @@ async def collect_farm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = extract_user(update)
     is_lgbt = DB.get_saved_lgbt_person()["name"] == user.name
     have_rainbow_charm = "rainbow_charm" in user.artifacts
-    current_time = int(time.time())
-    delta_time = current_time - user.saved_date
-    days = delta_time // FARM_COOLDOWN
-    leftover = delta_time - (days * FARM_COOLDOWN)
-    if days <= 0:
-        next_time_str = time.strftime('%H:%M:%S', time.gmtime(FARM_COOLDOWN - delta_time))
-        response = f'<b>{user.name}</b> дохода пока нет.\nВы сможете собрать золото через: {next_time_str}.'
+
+    current_epoch_days = utils.get_today()
+    if current_epoch_days <= user.saved_date:
+        response = f'<b>{user.name}</b> дохода нет...'
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
         return
+    days = current_epoch_days - user.saved_date
     income = days * user.farm
     charm_text = ''
     if is_lgbt and have_rainbow_charm:
         charm = artifacts.find_artefact_by_name(DB.artifacts_json, "rainbow_charm")
         income *= charm.value
-        charm_text = f' X {charm.value} rainbow_charm'
+        charm_text = f' X {charm.value} от rainbow_charm'
     user.set_gold(user.gold + income)
-    user.set_saved_date(current_time - leftover)
-    next_time = user.saved_date + FARM_COOLDOWN - current_time
-    next_time_str = time.strftime('%H:%M:%S', time.gmtime(next_time))
+    user.set_saved_date(current_epoch_days)
     DB.update_user(user)
-    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {utils.declensed_farm(user.farm)}{charm_text} = {income} {utils.declensed_gold(income)}. Итого: {user.gold} {utils.declensed_gold(user.gold)}.\nВы сможете собрать золото через: {next_time_str}.'
+    response = f'<b>{user.name}</b>, ваш доход {days} дн. X {user.farm} {utils.declensed_farm(user.farm)}{charm_text} = {income} {utils.declensed_gold(income)}. \nИтого: {user.gold} {utils.declensed_gold(user.gold)}.'
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -358,6 +352,7 @@ async def lottery(update: Update, context: ContextTypes.DEFAULT_TYPE):
     DB.update_user(sending_user)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+
 async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
@@ -392,7 +387,6 @@ async def lottery_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
             tries_count += 1
             gold_in_bank = gold_in_bank + LOTTERY_COST
 
-
     if sending_user.gold < LOTTERY_COST:
         DB.set_gold_in_bank(gold_in_bank)
         response = f"<b>{sending_user.name}</b> вы не выиграли и потратили {initial_gold - sending_user.gold} {utils.declensed_gold(initial_gold - sending_user.gold)}.\n\n{get_stats(sending_user)}\n\nПризовой фонд: {gold_in_bank} {utils.declensed_gold(gold_in_bank)}!"
@@ -416,7 +410,7 @@ async def lgbt_person(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not saved_lgbt_person:
         response = 'Функция еще не реализована для используемого типа БД'
     else:
-        current_epoch_days = (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days
+        current_epoch_days = utils.get_today()
         if current_epoch_days > int(saved_lgbt_person['epoch_days']):
             users = DB.get_all_users()
             lgbt_person_id = random.choice(list(users.keys()))
@@ -466,12 +460,14 @@ async def buy_artifact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response = f"<b>{user.name}</b>, поздравляю с покупкой!\n\n{get_stats(user)}"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
+
 async def show_artifacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
     all_artifacts = DB.artifacts_json
     response = f"{artifacts.print_artifacts(all_artifacts)}"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
+
 
 def run_telegram_app():
     print('running telegram app...')

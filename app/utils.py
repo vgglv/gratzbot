@@ -1,4 +1,5 @@
 import random
+import datetime
 
 
 def numeral_noun_declension(number, nominative_singular, genetive_singular, nominative_plural):
@@ -33,6 +34,7 @@ def items_to_html(items, users) -> str:
         _list.append(f"{place}. <b>{name}</b> - {gold} {declensed_gold(gold)}, {farm} {declensed_farm(farm)}.")
     return "\n".join(_list)
 
+
 def roll_for_success(success_rate):
     roll_result = random.randint(1, 100)
 
@@ -40,3 +42,7 @@ def roll_for_success(success_rate):
         return True  # Success
     else:
         return False  # Failure
+
+
+def get_today():
+    return (datetime.datetime.now() - datetime.datetime(1970, 1, 1)).days
