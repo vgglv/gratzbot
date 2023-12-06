@@ -21,14 +21,6 @@ class AbstractDatabase(ABC):
         pass
 
     @abstractmethod
-    def set_gold_in_bank(self, gold: int) -> None:
-        pass
-
-    @abstractmethod
-    def get_gold_from_bank(self) -> int:
-        pass
-
-    @abstractmethod
     def get_saved_lgbt_person(self) -> dict:
         pass
 

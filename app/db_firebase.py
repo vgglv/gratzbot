@@ -1,7 +1,5 @@
 import base64
-import datetime
 from os import getenv
-import time
 
 from app.db_abstract import AbstractDatabase
 import firebase_admin
@@ -36,56 +34,33 @@ class FirebaseDatabase(AbstractDatabase):
             user = self.create_user(user_id, user_name)
             print(f"created user: {user}")
 
-        if "gold" not in user:
-            user["gold"] = 0
-
-        artifacts = []
-        if "artifacts" in user:
-            artifacts = user["artifacts"]
+        if "gratz" not in user:
+            user["gratz"] = 0
 
         result = GUser(
             user_id=user_id,
             name=user_name,
-            gold=user["gold"],
-            farm=user["farm"],
-            saved_date=user["saved_date"],
-            artifacts=artifacts
+            gratz=user["gratz"]
         )
         return result
 
     def update_user(self, user: GUser) -> None:
         value = {
             "name": user.name,
-            "gold": user.gold,
-            "farm": user.farm,
-            "saved_date": user.saved_date,
-            "artifacts": user.artifacts
+            "gratz": user.gratz
         }
         db.reference(f"/Users/{user.user_id}").update(value)
 
     def create_user(self, user_id: str, name: str) -> dict[str, any]:
         user_data = {
             "name": name,
-            "gold": 5,
-            "farm": 1,
-            "saved_date": get_today() - 1,
-            "artifacts": []
+            "gratz": 0,
         }
         db.reference("/Users/").child(user_id).set(user_data)
         return user_data
 
     def get_all_users(self) -> dict[str, dict[str, any]]:
         return db.reference("/Users/").get()
-
-    def set_gold_in_bank(self, gold: int) -> None:
-        db.reference("/bank/gold").child("amount").set(gold)
-
-    def get_gold_from_bank(self) -> int:
-        gold = db.reference("/bank/gold").get()
-        if not gold:
-            db.reference("/bank/gold").child("amount").set(0)
-            return 0
-        return int(gold["amount"])
 
     def get_saved_lgbt_person(self) -> dict:
         lgbt_person = db.reference("/lgbt/person").get()
