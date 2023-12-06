@@ -32,8 +32,8 @@ def is_reply_message(update: Update):
     if not update.effective_message.reply_to_message:
         print("returning from give, since message was not a reply")
         return False
-    return True
-    # return not update.effective_message.reply_to_message.from_user.is_bot
+    # greturn True
+    return not update.effective_message.reply_to_message.from_user.is_bot
 
 
 def extract_replying_user(update: Update):
