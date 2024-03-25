@@ -15,8 +15,12 @@ DB = FirebaseDatabase()
 # DB = JsonDatabase()
 
 
-def get_stats(user: GUser):
-    return f"<b>{user.name}</b>, у вас: \n• {user.gratz} {utils.declensed_gratz(user.gratz)}."
+def get_stats(user: GUser, with_name_addressing: bool):
+    if with_name_addressing:
+        addressing = f"<b>{user.name}</b>, у вас: \n•"
+    else:
+        addressing = "У вас"
+    return f"{addressing} {user.gratz} {utils.declensed_gratz(user.gratz)}."
 
 
 def is_correct_chat(update: Update):
@@ -67,7 +71,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_correct_chat(update):
         return
     user = DB.get_user(str(update.effective_user.id), update.effective_user.first_name)
-    response = get_stats(user)
+    response = get_stats(user, with_name_addressing=True)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
@@ -82,7 +86,7 @@ async def gratz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     receiving_user.gratz = receiving_user.gratz + 1
     DB.update_user(receiving_user)
 
-    response = f"<b>{receiving_user.name}</b> грац!\n{get_stats(receiving_user)}"
+    response = f"<b>{receiving_user.name}</b> грац! {get_stats(receiving_user, with_name_addressing=False)}"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response, parse_mode="HTML")
 
 
