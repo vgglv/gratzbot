@@ -1,9 +1,0 @@
-.vscode/
-.venv/
-venv/
-__pycache__
-/app/test.py
-.vercel
-.idea
-csv/
-dummy_db.json
