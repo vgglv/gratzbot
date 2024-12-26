@@ -14,10 +14,10 @@ const reaction_fire string = "🔥"
 
 func process_telegram_updates(updates []Update, offset int) {
 	for _, update := range updates {
-		if !is_debug {
-			if update.Message.Chat.ID != channel_id {
-				continue
-			}
+		fmt.Println(update)
+		fmt.Println("Chat id: ", update.Message.Chat.ID)
+		if update.Message.Chat.ID != channel_id && !is_debug {
+			continue
 		}
 		if update.ID <= offset {
 			continue

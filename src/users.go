@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -31,6 +32,9 @@ func load_users_data_from_json() error {
 
 // saves current UsersData type to a users.json file
 func write_users_data_to_json() error {
+	if is_debug {
+		fmt.Println("Writing json file...")
+	}
 	json, err := json.Marshal(users_data)
 	if err != nil {
 		return err
