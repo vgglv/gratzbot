@@ -1,8 +1,8 @@
 package main
 
 type Stock struct {
-	Name string `json:"name"`
-	Stocks_available int `json:"stocks_available"`
+	Name             string `json:"name"`
+	Stocks_available int    `json:"stocks_available"`
 }
 
 // ##### TELEGRAM ######
@@ -64,14 +64,13 @@ type Update struct {
 // ##### local save structs #####
 
 type UsersData struct {
-	LastUpdate int `json:"last_update"`
-	Users []UserInfo `json:"Users"`
+	LastUpdate int              `json:"last_update"`
+	Users      map[int]UserInfo `json:"Users"`
 }
 
 type UserInfo struct {
 	Gratz int    `json:"gratz"`
 	Name  string `json:"name"`
-	Stocks []Stock `json:"stocks"`
 }
 
 type UpdateResponsePayload struct {
@@ -86,4 +85,17 @@ type RequestUpdatePayload struct {
 	Offset         string   `json:"offset"`
 	Timeout        string   `json:"timeout"`
 	AllowedUpdates []string `json:"allowed_updates"`
+}
+
+type CustomError struct {
+	message string
+}
+
+func (e *CustomError) Error() string {
+	return e.message
+}
+
+type Top struct {
+	UserName string
+	Amount   int
 }

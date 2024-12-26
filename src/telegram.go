@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func Telegram_sendMessage(chat_id int, text string) error {
+func make_request_send_message_to_chat(chat_id int, text string) error {
 	var buf bytes.Buffer
 	params := SendMessagePayload{
 		ChatId: strconv.Itoa(chat_id),
@@ -48,7 +48,10 @@ func Telegram_sendMessage(chat_id int, text string) error {
 	return nil
 }
 
-func Telegram_setMessageReaction(message_id int, chat_id int, reaction []ReactionType) error {
+func make_reaction_request(message_id int, chat_id int, reaction []ReactionType) error {
+	if message_id == 0 {
+		return &CustomError{"[Reaction] message_id was 0"}
+	}
 	var buf bytes.Buffer
 	params := map[string]string{
 		"chat_id":    strconv.Itoa(chat_id),
@@ -82,7 +85,7 @@ func Telegram_setMessageReaction(message_id int, chat_id int, reaction []Reactio
 	return nil
 }
 
-func Telegram_requestUpdates(offset int) ([]Update, error) {
+func request_new_updates(offset int) ([]Update, error) {
 	var buf bytes.Buffer
 	params := RequestUpdatePayload{
 		Offset:         strconv.Itoa(offset),

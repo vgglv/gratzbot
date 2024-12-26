@@ -10,3 +10,9 @@ func Index[T comparable](s []T, x T) (int, error) {
 	}
 	return -1, errors.New("value not found")
 }
+
+func string_to_reaction_type(emoji string) []ReactionType {
+	return []ReactionType{
+		{"emoji", emoji},
+	}
+}
