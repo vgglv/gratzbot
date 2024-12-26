@@ -8,9 +8,11 @@ import (
 
 func ResponseHandler_processUpdates(updates []Update, offset int) {
 	for _, update := range updates {
-//		if update.Message.Chat.ID != channel_id {
-//			continue
-//		}
+		if !is_debug {
+			if update.Message.Chat.ID != channel_id {
+				continue
+			}
+		}
 		if update.ID <= offset {
 			continue
 		}

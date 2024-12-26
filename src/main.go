@@ -5,20 +5,18 @@ import (
 	"time"
 )
 
+var is_debug bool = true
+
 func main() {
 	err := ParseEnvVariables()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = Stocks_loadDB()
+	err = Users_loadDB()
 	if err != nil {
 		fmt.Println(err)
 		return
-	}
-	err = Stocks_saveBackupDB()
-	if err != nil {
-		fmt.Println(err)
 	}
 	offset := 0
 	for {

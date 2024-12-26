@@ -64,7 +64,8 @@ type Update struct {
 // ##### local save structs #####
 
 type UsersData struct {
-	Users map[string]UserInfo `json:"Users"`
+	LastUpdate int `json:"last_update"`
+	Users []UserInfo `json:"Users"`
 }
 
 type UserInfo struct {

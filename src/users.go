@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var usersDB []UserInfo
+var usersDB UsersData
 
 func Users_loadDB() error {
 	content, err := os.ReadFile("users.json")
@@ -21,7 +21,7 @@ func Users_loadDB() error {
 	return nil
 }
 
-// saves current []UserInfo slice to a users.json file
+// saves current UsersData type to a users.json file
 func Users_saveDB() error {
 	json, err := json.Marshal(usersDB)
 	if err != nil {
@@ -34,15 +34,3 @@ func Users_saveDB() error {
 	return nil
 }
 
-// saves current []UserInfo slice to a users.json.bak file
-func Users_saveBackupDB() error {
-	json, err := json.Marshal(stocksDB)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile("users.json.bak", json, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
-}
