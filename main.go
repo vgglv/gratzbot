@@ -6,7 +6,12 @@ import (
 )
 
 func main() {
-	err := ParseEnvVariables()
+	err := parse_config()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = load_actions()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -20,22 +25,29 @@ func main() {
 		updates, err := request_new_updates(users_data.LastUpdate)
 		if err != nil {
 			fmt.Println("Some error happened:\n", err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(time.Duration(config.Sleep_time) * time.Second)
 			continue
 		}
 
 		if len(updates) > 0 {
-			process_telegram_updates(updates, users_data.LastUpdate)
+			for _, update := range updates {
+				if update.Message.Chat.ID != config.channel_id && !config.is_debug {
+					continue
+				}
+				if update.ID <= users_data.LastUpdate {
+					continue
+				}
+				if config.is_debug {
+					fmt.Printf("%+v\n", update)
+				}
+				perform_command_on_update(update)
+			}
 			last_index := len(updates) - 1
 			last_element := updates[last_index]
 			if users_data.LastUpdate != last_element.ID {
 				users_data.LastUpdate = last_element.ID
-				err := write_users_data_to_json()
-				if err != nil {
-					fmt.Println("Error writing json data", err)
-				}
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(config.Sleep_time) * time.Second)
 	}
 }

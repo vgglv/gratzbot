@@ -1,8 +1,47 @@
 package main
 
+type ActionType string
+type ActionUserType string
+type WhenType string
+
+const (
+	ActionType_SendReaction  ActionType     = "send_reaction"
+	ActionType_AppendGratz   ActionType     = "append_gratz"
+	ActionType_Top           ActionType     = "send_gratz_top"
+	ActionType_SendMessage   ActionType     = "send_message"
+	ActionUserType_SendUser  ActionUserType = "send_user"
+	ActionUserType_ReplyUser ActionUserType = "reply_user"
+	WhenType_Reply           WhenType       = "reply"
+	WhenType_BotCommand      WhenType       = "bot_command"
+	WhenType_SoloMessage     WhenType       = "solo_message"
+	WhenType_NotHimself      WhenType       = "not_himself"
+	WhenType_Himself         WhenType       = "himself"
+)
+
 type Stock struct {
 	Name             string `json:"name"`
 	Stocks_available int    `json:"stocks_available"`
+}
+
+type Config struct {
+	bot_token       string
+	channel_id      int
+	is_debug        bool
+	Sleep_time      int    `json:"sleep_time"`
+	Request_timeout int    `json:"request_timeout"`
+	Url_route       string `json:"url_route"`
+}
+
+type Action struct {
+	Type   ActionType     `json:"type"`
+	Value  string         `json:"value"`
+	SendTo ActionUserType `json:"send_to"`
+}
+
+type Command struct {
+	Text_contains string     `json:"text_contains"`
+	When          []WhenType `json:"when,omitempty"`
+	Actions       []Action   `json:"actions"`
 }
 
 // ##### TELEGRAM ######

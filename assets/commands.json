@@ -1,0 +1,128 @@
+[
+    {
+        "text_contains": "грац",
+        "when": [
+            "reply",
+            "not_himself"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "👌",
+                "send_to": "send_user"
+            },
+            {
+                "type": "send_reaction",
+                "value": "👍",
+                "send_to": "reply_user"
+            },
+            {
+                "type": "append_gratz",
+                "send_to": "reply_user"
+            }
+        ]
+    },
+    {
+        "text_contains": "грац",
+        "when": [
+            "reply",
+            "himself"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "🤡",
+                "send_to": "send_user"
+            }
+        ]
+    },
+    {
+        "text_contains": "ахуй",
+        "when": [
+            "reply"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "🔥",
+                "send_to": "reply_user"
+            }
+        ]
+    },
+    {
+        "text_contains": "/top",
+        "when": [
+            "bot_command"
+        ],
+        "actions": [
+            {
+                "type": "send_gratz_top"
+            }
+        ]
+    },
+    {
+        "text_contains": "ахуй",
+        "when": [
+            "solo_message"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "🔥",
+                "send_to": "send_user"
+            }
+        ]
+    },
+    {
+        "text_contains": "грацбот",
+        "when": [
+            "solo_message"
+        ],
+        "actions": [
+            {
+                "type": "send_message",
+                "value": "а?",
+                "send_to": "chat"
+            }
+        ]
+    },
+    {
+        "text_contains": "алло",
+        "when": [
+            "solo_message"
+        ],
+        "actions": [
+            {
+                "type": "send_message",
+                "value": "алло",
+                "send_to": "chat"
+            }
+        ]
+    },
+    {
+        "text_contains": "sex",
+        "when": [
+            "solo_message"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "🍌",
+                "send_to": "send_user"
+            }
+        ]
+    },
+    {
+        "text_contains": "аниме",
+        "when": [
+            "solo_message"
+        ],
+        "actions": [
+            {
+                "type": "send_reaction",
+                "value": "🤮",
+                "send_to": "send_user"
+            }
+        ]
+    }
+]
