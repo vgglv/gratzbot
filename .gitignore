@@ -4,3 +4,5 @@ users.json
 users.json.bak
 .env
 gratzbot
+.cache/
+build/
