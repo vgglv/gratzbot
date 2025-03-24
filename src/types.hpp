@@ -96,3 +96,17 @@ void from_json(const json& j, Command& p) {
         p.conditions.emplace_back(a.get<ConditionType>());
     }
 }
+
+struct User {
+    int gratz;
+    std::string name;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(User, gratz, name);
+
+struct UsersDB {
+    unsigned long int last_update;
+    std::map<std::string, User> users;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UsersDB, last_update, users);
