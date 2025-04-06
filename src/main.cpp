@@ -69,6 +69,11 @@ int main() {
         cpr::Parameters{{"Content-Type", "application/json"}});
     std::cout << r.status_code << "\n";
     std::cout << r.text << "\n";
+    json answer = json::parse(r.text);
+    std::vector<Update> updates = answer["result"].get<std::vector<Update>>();
+    for (const auto& update : updates) {
+        std::cout << "Update id: " << update.update_id << "\n";
+    }
 
 
 //    using namespace std::chrono_literals;
