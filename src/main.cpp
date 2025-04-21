@@ -1,9 +1,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <thread>
 #include "cpr/cpr.h"
 #include "types.hpp"
+#include "nlohmann/json.hpp"
 
 using namespace nlohmann;
 
@@ -55,18 +55,11 @@ int main() {
     request_update_payload["timeout"] = 10;
     request_update_payload["allowed_updates"].emplace_back("message");
 
-//    cpr::Response r = cpr::Get(cpr::Url{"https://api.github.com/repos/whoshuu/cpr/contributors"},
-//                               cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC},
-//                               cpr::Parameters{{"anon", "true"}, {"key", "value"}});
-//    std::cout << "Status code: " << r.status_code << '\n';
-//    std::cout << "Header:\n";
-//    for (const std::pair<const std::basic_string<char>, std::basic_string<char>>& kv : r.header) {
-//        std::cout << '\t' << kv.first << ':' << kv.second << '\n';
-//    }
-//    std::cout << "Text: " << r.text << '\n';
-
-    cpr::Response r = cpr::Post(cpr::Url{config.url_route + "/getUpdates"}, cpr::Body{request_update_payload.dump()},
-        cpr::Parameters{{"Content-Type", "application/json"}});
+    cpr::Response r = cpr::Post(
+        cpr::Url{config.url_route + "/getUpdates"}, 
+        cpr::Body{request_update_payload.dump()},
+        cpr::Parameters{{"Content-Type", "application/json"}}
+    );
     std::cout << r.status_code << "\n";
     std::cout << r.text << "\n";
     json answer = json::parse(r.text);
