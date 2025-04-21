@@ -1,8 +1,9 @@
 #pragma once
+#include "nlohmann/json.hpp"
 #include <string>
 #include <optional>
-#include "nlohmann/detail/macro_scope.hpp"
-#include "nlohmann/json.hpp"
+#include <vector>
+#include <map>
 
 using namespace nlohmann;
 
@@ -11,23 +12,114 @@ struct Config {
     int sleep_time;
     std::string url_route;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Config, request_timeout, sleep_time, url_route);
 
 enum class UserType {
     SEND_USER,
     REPLY_USER,
 };
-NLOHMANN_JSON_SERIALIZE_ENUM( UserType, {
-    {UserType::SEND_USER, "send_user"},
-    {UserType::REPLY_USER, "reply_user"},
-});
+
+enum class ConditionType {
+    REPLY,
+    NOT_HIMSELF,
+    HIMSELF,
+    BOT_COMMAND,
+    SOLO_MESSAGE,
+};
 
 struct Action {
     std::string type;
     std::optional<std::string> value;
     std::optional<UserType> send_to;
 };
-void to_json(json& j, const Action& p) {
+
+
+struct Command {
+    std::string text_contains;
+    std::vector<ConditionType> conditions;
+    std::vector<Action> actions;
+};
+
+struct LocalUser {
+    int gratz;
+    std::string name;
+};
+
+struct UsersDB {
+    unsigned long int last_update;
+    std::map<std::string, LocalUser> users;
+};
+
+struct Chat {
+    int id;
+};
+
+struct ReactionType {
+    std::string type;
+    std::string emoji;
+};
+
+struct User {
+    int id;
+    bool is_bot;
+    std::string first_name;
+};
+
+struct MessageReaction {
+    Chat chat;
+    int message_id;
+    std::optional<User> user;
+    std::vector<ReactionType> old_reaction;
+    std::vector<ReactionType> new_reaction;
+};
+
+struct MessageEntity {
+    std::string type;
+    int offset;
+    int length;
+};
+
+struct ReplyMessage {
+    int message_id;
+    std::optional<User> from;
+};
+
+struct Message {
+    int message_id;
+    std::optional<User> from;
+    std::vector<MessageEntity> entities;
+    std::string text;
+    Chat chat;
+    std::optional<ReplyMessage> reply_to_message;
+};
+
+struct Update {
+    int update_id;
+    std::optional<MessageReaction> message_reaction;
+    std::optional<Message> message;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Config, request_timeout, sleep_time, url_route);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LocalUser, gratz, name);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UsersDB, last_update, users);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Chat, id);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ReactionType, type, emoji);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(User, id, is_bot, first_name);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MessageEntity, type, offset, length);
+
+NLOHMANN_JSON_SERIALIZE_ENUM( UserType, {
+    {UserType::SEND_USER, "send_user"},
+    {UserType::REPLY_USER, "reply_user"},
+});
+
+NLOHMANN_JSON_SERIALIZE_ENUM( ConditionType, {
+    {ConditionType::REPLY, "reply"},
+    {ConditionType::NOT_HIMSELF, "not_himself"},
+    {ConditionType::HIMSELF, "himself"},
+    {ConditionType::BOT_COMMAND, "bot_command"},
+    {ConditionType::SOLO_MESSAGE, "solo_command"},
+});
+
+inline void to_json(json& j, const Action& p) {
     j = json{
         {"type", p.type}
     };
@@ -38,7 +130,7 @@ void to_json(json& j, const Action& p) {
         j["value"] = p.value.value();
     }
 }
-void from_json(const json& j, Action& p) {
+inline void from_json(const json& j, Action& p) {
     p.type = j["type"].get<std::string>();
     if (j.contains("send_to")) {
         p.send_to = j["send_to"].get<UserType>();
@@ -48,27 +140,7 @@ void from_json(const json& j, Action& p) {
     }
 }
 
-enum class ConditionType {
-    REPLY,
-    NOT_HIMSELF,
-    HIMSELF,
-    BOT_COMMAND,
-    SOLO_MESSAGE,
-};
-NLOHMANN_JSON_SERIALIZE_ENUM( ConditionType, {
-    {ConditionType::REPLY, "reply"},
-    {ConditionType::NOT_HIMSELF, "not_himself"},
-    {ConditionType::HIMSELF, "himself"},
-    {ConditionType::BOT_COMMAND, "bot_command"},
-    {ConditionType::SOLO_MESSAGE, "solo_command"},
-});
-
-struct Command {
-    std::string text_contains;
-    std::vector<ConditionType> conditions;
-    std::vector<Action> actions;
-};
-void to_json(json& j, const Command& p) {
+inline void to_json(json& j, const Command& p) {
     j = json{
         {"text_contains", p.text_contains}
     };
@@ -79,7 +151,7 @@ void to_json(json& j, const Command& p) {
         j["when"].emplace_back(c);
     }
 }
-void from_json(const json& j, Command& p) {
+inline void from_json(const json& j, Command& p) {
     p.text_contains = j["text_contains"].get<std::string>();
     for (const auto& a : j["actions"]) {
         p.actions.emplace_back(a.get<Action>());
@@ -89,44 +161,7 @@ void from_json(const json& j, Command& p) {
     }
 }
 
-struct LocalUser {
-    int gratz;
-    std::string name;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LocalUser, gratz, name);
-
-struct UsersDB {
-    unsigned long int last_update;
-    std::map<std::string, LocalUser> users;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UsersDB, last_update, users);
-
-struct Chat {
-    int id;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Chat, id);
-
-struct ReactionType {
-    std::string type;
-    std::string emoji;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ReactionType, type, emoji);
-
-struct User {
-    int id;
-    bool is_bot;
-    std::string first_name;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(User, id, is_bot, first_name);
-
-struct MessageReaction {
-    Chat chat;
-    int message_id;
-    std::optional<User> user;
-    std::vector<ReactionType> old_reaction;
-    std::vector<ReactionType> new_reaction;
-};
-void to_json(json& j, const MessageReaction& p) {
+inline void to_json(json& j, const MessageReaction& p) {
     j = json{
         {"chat", p.chat},
         {"message_id", p.message_id}
@@ -141,7 +176,7 @@ void to_json(json& j, const MessageReaction& p) {
         j["new_reaction"].emplace_back(reaction);
     }
 }
-void from_json(const json& j, MessageReaction& p) {
+inline void from_json(const json& j, MessageReaction& p) {
     p.chat = j["chat"].get<Chat>();
     p.message_id = j["message_id"].get<int>();
     if (j.contains("user")) {
@@ -159,18 +194,7 @@ void from_json(const json& j, MessageReaction& p) {
     }
 }
 
-struct MessageEntity {
-    std::string type;
-    int offset;
-    int length;
-};
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MessageEntity, type, offset, length);
-
-struct ReplyMessage {
-    int message_id;
-    std::optional<User> from;
-};
-void to_json(json& j, const ReplyMessage& p) {
+inline void to_json(json& j, const ReplyMessage& p) {
     j = json{
         {"message_id", p.message_id}
     };
@@ -178,22 +202,14 @@ void to_json(json& j, const ReplyMessage& p) {
         j["from"] = p.from.value();
     }
 }
-void from_json(const json& j, ReplyMessage& p) {
+inline void from_json(const json& j, ReplyMessage& p) {
     p.message_id = j["message_id"].get<int>();
     if (j.contains("from")) {
         p.from = j["from"].get<User>();
     }
 }
 
-struct Message {
-    int message_id;
-    std::optional<User> from;
-    std::vector<MessageEntity> entities;
-    std::string text;
-    Chat chat;
-    std::optional<ReplyMessage> reply_to_message;
-};
-void to_json(json& j, const Message& p) {
+inline void to_json(json& j, const Message& p) {
     j = json{
         {"message_id", p.message_id},
         {"text", p.text},
@@ -210,7 +226,7 @@ void to_json(json& j, const Message& p) {
 //        j["entities"].emplace_back(entity);
 //    }
 }
-void from_json(const json& j, Message& p) {
+inline void from_json(const json& j, Message& p) {
     p.message_id = j["message_id"].get<int>();
     p.text = j["text"].get<std::string>();
     p.chat = j["chat"].get<Chat>();
@@ -225,12 +241,7 @@ void from_json(const json& j, Message& p) {
     }
 }
 
-struct Update {
-    int update_id;
-    std::optional<MessageReaction> message_reaction;
-    std::optional<Message> message;
-};
-void to_json(json& j, const Update& p) {
+inline void to_json(json& j, const Update& p) {
     j = json{
         {"update_id", p.update_id},
     };
@@ -241,7 +252,7 @@ void to_json(json& j, const Update& p) {
         j["message"] = p.message.value();
     }
 }
-void from_json(const json& j, Update& p) {
+inline void from_json(const json& j, Update& p) {
     p.update_id = j["update_id"].get<int>();
     if (j.contains("message_reaction")) {
         p.message_reaction = j["message_reaction"].get<MessageReaction>();
@@ -250,3 +261,4 @@ void from_json(const json& j, Update& p) {
         p.message = j["message"].get<Message>();
     }
 }
+
