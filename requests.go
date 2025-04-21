@@ -71,9 +71,6 @@ func make_reaction_request(message_id int, chat_id int, reaction []ReactionType)
 	if message_id == 0 {
 		return &CustomError{"[Reaction] message_id was 0"}
 	}
-	if config.is_debug {
-		fmt.Println("Sending reaction")
-	}
 	var buf bytes.Buffer
 	params := map[string]string{
 		"chat_id":    strconv.Itoa(chat_id),

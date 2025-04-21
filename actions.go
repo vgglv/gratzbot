@@ -48,28 +48,19 @@ func perform_command_on_update(u Update) {
 func check_if_when_fulfilled(when WhenType, u Update) bool {
 	switch when {
 	case WhenType_Himself:
-		if config.is_debug {
-			fmt.Println("[Himself]")
-		}
 		return u.Message.From.ID == u.Message.ReplyMsg.From.ID
 	case WhenType_NotHimself:
-		if config.is_debug {
-			fmt.Println("[Not Himself]")
-		}
 		return u.Message.From.ID != u.Message.ReplyMsg.From.ID
 	case WhenType_BotCommand:
-		fmt.Println("[BotCommand]")
 		return slices.IndexFunc(u.Message.Entities, func(m MessageEntity) bool {
 			return m.Type == "bot_command"
 		}) >= 0
 	case WhenType_SoloMessage:
-		fmt.Println("[SoloMessage]")
 		if len(u.Message.Entities) > 0 {
 			return false
 		}
 		return u.Message.ReplyMsg.From.ID == 0
 	case WhenType_Reply:
-		fmt.Println("[Reply]")
 		return u.Message.ReplyMsg.From.ID != 0
 	}
 	return true

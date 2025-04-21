@@ -111,18 +111,5 @@
                 "send_to": "send_user"
             }
         ]
-    },
-    {
-        "text_contains": "аниме",
-        "when": [
-            "solo_message"
-        ],
-        "actions": [
-            {
-                "type": "send_reaction",
-                "value": "🤮",
-                "send_to": "send_user"
-            }
-        ]
     }
 ]

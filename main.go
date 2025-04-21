@@ -24,7 +24,7 @@ func main() {
 	for {
 		updates, err := request_new_updates(users_data.LastUpdate)
 		if err != nil {
-			fmt.Println("Some error happened:\n", err)
+			fmt.Println(err)
 			time.Sleep(time.Duration(config.Sleep_time) * time.Second)
 			continue
 		}
