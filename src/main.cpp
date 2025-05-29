@@ -23,10 +23,6 @@ int main() {
     Config config = config_json.get<Config>();
     config.url_route += bot_api_key.value();
 
-    std::ifstream commands_file("assets/commands.json");
-    json commands_json = json::parse(commands_file);
-    std::vector<Command> commands = commands_json.get<std::vector<Command>>();
-
 //    auto printAction = [](Action act) {
 //        std::cout << "\tAction: " << act.type << "\n";
 //        if (act.send_to) {
@@ -51,33 +47,28 @@ int main() {
 //        printCommand(cmd);
 //    }
 
-    std::ifstream users_file("users.json");
-    json users_json = json::parse(users_file);
-    UsersDB users_db = users_json.get<UsersDB>();
-
-    json request_update_payload;
-    request_update_payload["offset"] = 1;
-    request_update_payload["timeout"] = 10;
-    request_update_payload["allowed_updates"].emplace_back("message");
-
-    cpr::Response r = cpr::Post(
-        cpr::Url{config.url_route + "/getUpdates"}, 
-        cpr::Body{request_update_payload.dump()},
-        cpr::Parameters{{"Content-Type", "application/json"}}
-    );
-    std::cout << r.status_code << "\n";
-    std::cout << r.text << "\n";
-    json answer = json::parse(r.text);
-    std::vector<Update> updates = answer["result"].get<std::vector<Update>>();
-    for (const auto& update : updates) {
-        std::cout << "Update id: " << update.update_id << "\n";
-    }
-
-
-    using namespace std::chrono_literals;
-
+    std::chrono::seconds sleep_time_in_seconds(config.sleep_time);
     while(true) {
-        std::this_thread::sleep_for(config.sleep_time);
+        std::this_thread::sleep_for(sleep_time_in_seconds);
+
+        json request_update_payload;
+        request_update_payload["offset"] = users_db.last_update + 1;
+        request_update_payload["timeout"] = config.sleep_time;
+        request_update_payload["allowed_updates"].emplace_back("message");
+
+        cpr::Response r = cpr::Post(
+            cpr::Url{config.url_route + "/getUpdates"},
+            cpr::Body{request_update_payload.dump()},
+            cpr::Parameters{{"Content-Type", "application/json"}}
+        );
+        //std::cout << r.status_code << "\n";
+        //std::cout << r.text << "\n";
+        json answer = json::parse(r.text);
+        std::vector<Update> updates = answer["result"].get<std::vector<Update>>();
+        for (const auto& update : updates) {
+            std::cout << "Update id: " << update.update_id << "\n";
+            users_db.last_update = update.update_id;
+        }
     }
 
 //    for (const auto& [id, data] : users_db.Users) {
