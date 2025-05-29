@@ -4,19 +4,24 @@
 #include "cpr/cpr.h"
 #include "types.hpp"
 #include "nlohmann/json.hpp"
+#include "env.hpp"
 
 using namespace nlohmann;
 
+constexpr int RESULT_NO_KEY = 2;
+
 int main() {
-    auto bot_api_key = getenv("gratz_bot_api_key");
-    if (!bot_api_key) {
-        std::cerr << "Error: could not find bot api key\n";
-        return 1;
+    gratzbot::EnvContainer env;
+    env.parseDotEnv();
+    auto bot_api_key = env.getEnv("gratzbot_api_key");
+    if (!bot_api_key.has_value()) {
+        std::cerr << "Bot api key empty.\n";
+        return RESULT_NO_KEY;
     }
     std::ifstream config_file("assets/config.json");
     json config_json = json::parse(config_file);
     Config config = config_json.get<Config>();
-    config.url_route += bot_api_key;
+    config.url_route += bot_api_key.value();
 
     std::ifstream commands_file("assets/commands.json");
     json commands_json = json::parse(commands_file);
@@ -69,14 +74,16 @@ int main() {
     }
 
 
-//    using namespace std::chrono_literals;
+    using namespace std::chrono_literals;
 
-//    while(true) {
-//        std::this_thread::sleep_for(5s);
+    while(true) {
+        std::this_thread::sleep_for(config.sleep_time);
+    }
+
+//    for (const auto& [id, data] : users_db.Users) {
+//        std::cout << "ID: " << id << " gratz: " << data.gratz << " name: " << data.name << "\n";
 //    }
 
-//    for (const auto& [id, data] : users_db.users) {
-//        std::cout << "ID: " << id << " gratz: " << data.gratz << " name " << data.name << "\n";
-//    }
+    std::cout << json{users_db}.dump() << "\n";
     return 0;
 }
