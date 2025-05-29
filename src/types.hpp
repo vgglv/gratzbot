@@ -46,7 +46,7 @@ struct LocalUser {
 
 struct UsersDB {
     unsigned long int last_update;
-    std::map<std::string, LocalUser> users;
+    std::map<std::string, LocalUser> Users;
 };
 
 struct Chat {
@@ -100,7 +100,7 @@ struct Update {
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Config, request_timeout, sleep_time, url_route);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LocalUser, gratz, name);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UsersDB, last_update, users);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UsersDB, last_update, Users);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Chat, id);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ReactionType, type, emoji);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(User, id, is_bot, first_name);
@@ -261,4 +261,3 @@ inline void from_json(const json& j, Update& p) {
         p.message = j["message"].get<Message>();
     }
 }
-
