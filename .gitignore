@@ -4,3 +4,7 @@ users.json
 users.json.bak
 .env
 gratzbot
+
+# Added by cargo
+
+/target
