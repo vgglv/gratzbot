@@ -6,48 +6,45 @@ import (
 )
 
 func main() {
-	err := parse_config()
-	if err != nil {
+	if err := parseConfigFromFile(); err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = load_actions()
-	if err != nil {
+	if err := loadActionsFromFile(); err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = load_users_data_from_json()
-	if err != nil {
+	if err := loadUsersDataFromJson(); err != nil {
 		fmt.Println(err)
 		return
 	}
 	for {
-		updates, err := request_new_updates(users_data.LastUpdate)
+		updates, err := requestNewUpdates(users_data.LastUpdate)
 		if err != nil {
 			fmt.Println(err)
-			time.Sleep(time.Duration(config.Sleep_time) * time.Second)
+			time.Sleep(time.Duration(config.SleepTime) * time.Second)
 			continue
 		}
 
 		if len(updates) > 0 {
 			for _, update := range updates {
-				if update.Message.Chat.ID != config.channel_id && !config.is_debug {
+				if update.Message.Chat.Id != config.ChannelId && !config.IsDebug {
 					continue
 				}
-				if update.ID <= users_data.LastUpdate {
+				if update.UpdateId <= users_data.LastUpdate {
 					continue
 				}
-				if config.is_debug {
+				if config.IsDebug {
 					fmt.Printf("%+v\n", update)
 				}
-				perform_command_on_update(update)
+				processCommandOnUpdate(update)
 			}
 			last_index := len(updates) - 1
 			last_element := updates[last_index]
-			if users_data.LastUpdate != last_element.ID {
-				users_data.LastUpdate = last_element.ID
+			if users_data.LastUpdate != last_element.UpdateId {
+				users_data.LastUpdate = last_element.UpdateId
 			}
 		}
-		time.Sleep(time.Duration(config.Sleep_time) * time.Second)
+		time.Sleep(time.Duration(config.SleepTime) * time.Second)
 	}
 }

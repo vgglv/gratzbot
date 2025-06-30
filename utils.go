@@ -14,20 +14,12 @@ func Index[T comparable](s []T, x T) (int, error) {
 	return -1, errors.New("value not found")
 }
 
-func string_to_reaction_type(emoji string) []ReactionType {
+func stringToReactionTypeSlice(emoji string) []ReactionType {
 	return []ReactionType{
 		{"emoji", emoji},
 	}
 }
 
-func contains_exact_word(t1 string, t2 string) bool {
-	lowercase_text := strings.ToLower(t1)
-	words := strings.Fields(lowercase_text)
-
-	for _, word := range words {
-		if word == t2 {
-			return true
-		}
-	}
-	return false
+func containsExactWord(t1 string, t2 string) bool {
+	return strings.Contains(strings.ToLower(t1), t2)
 }

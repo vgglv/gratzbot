@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,12 +19,12 @@ var (
 
 func getHttpClient() *http.Client {
 	http_client_once.Do(func() {
-		http_client.Timeout = time.Duration(config.Request_timeout) * time.Second
+		http_client.Timeout = time.Duration(config.RequestTimeout) * time.Second
 	})
 	return http_client
 }
 
-func request_new_updates(offset int) ([]Update, error) {
+func requestNewUpdates(offset int) ([]Update, error) {
 	var buf bytes.Buffer
 	params := RequestUpdatePayload{
 		Offset:         strconv.Itoa(offset),
@@ -32,11 +33,10 @@ func request_new_updates(offset int) ([]Update, error) {
 	}
 
 	encoder := json.NewEncoder(&buf)
-	err := encoder.Encode(params)
-	if err != nil {
+	if err := encoder.Encode(params); err != nil {
 		return nil, err
 	}
-	url := config.Url_route + "/getUpdates"
+	url := config.UrlRoute + "/getUpdates"
 	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	if err != nil {
 		return nil, err
@@ -55,9 +55,7 @@ func request_new_updates(offset int) ([]Update, error) {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, &CustomError{
-			message: "status was not equal 200",
-		}
+		return nil, errors.New("status was not equal 200")
 	}
 	var tg_response UpdateResponsePayload
 	err = json.Unmarshal(body, &tg_response)
@@ -67,9 +65,9 @@ func request_new_updates(offset int) ([]Update, error) {
 	return tg_response.Result, nil
 }
 
-func make_reaction_request(message_id int, chat_id int, reaction []ReactionType) error {
+func sendMessageReactionRequest(message_id int, chat_id int, reaction []ReactionType) error {
 	if message_id == 0 {
-		return &CustomError{"[Reaction] message_id was 0"}
+		return errors.New("[Reaction] message_id was 0")
 	}
 	var buf bytes.Buffer
 	params := map[string]string{
@@ -87,7 +85,7 @@ func make_reaction_request(message_id int, chat_id int, reaction []ReactionType)
 	if err != nil {
 		return err
 	}
-	url := config.Url_route + "/setMessageReaction"
+	url := config.UrlRoute + "/setMessageReaction"
 	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	if err != nil {
 		return err
@@ -103,7 +101,7 @@ func make_reaction_request(message_id int, chat_id int, reaction []ReactionType)
 	return nil
 }
 
-func make_request_send_message_to_chat(chat_id int, text string) error {
+func sendMessageRequest(chat_id int, text string) error {
 	var buf bytes.Buffer
 	params := SendMessagePayload{
 		ChatId: strconv.Itoa(chat_id),
@@ -114,7 +112,7 @@ func make_request_send_message_to_chat(chat_id int, text string) error {
 	if err != nil {
 		return err
 	}
-	url := config.Url_route + "/sendMessage"
+	url := config.UrlRoute + "/sendMessage"
 	req, err := http.NewRequest(http.MethodPost, url, &buf)
 	if err != nil {
 		return err

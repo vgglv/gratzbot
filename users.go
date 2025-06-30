@@ -9,9 +9,9 @@ import (
 
 var users_data UsersData
 
-func load_users_data_from_json() error {
+func loadUsersDataFromJson() error {
 	if _, err := os.Stat("users.json"); errors.Is(err, os.ErrNotExist) {
-		err = write_users_data_to_json()
+		err = writeUsersDataToJson()
 		if err != nil {
 			return err
 		}
@@ -31,8 +31,8 @@ func load_users_data_from_json() error {
 }
 
 // saves current UsersData type to a users.json file
-func write_users_data_to_json() error {
-	if config.is_debug {
+func writeUsersDataToJson() error {
+	if config.IsDebug {
 		fmt.Println("Writing json file...")
 	}
 	json, err := json.Marshal(users_data)
@@ -46,11 +46,11 @@ func write_users_data_to_json() error {
 	return nil
 }
 
-func append_gratz_to_user(u User) {
+func appendGratzToUser(u User) {
 	val, ok := users_data.Users[u.ID]
 	if !ok {
 		users_data.Users[u.ID] = UserInfo{1, u.FirstName}
-		err := write_users_data_to_json()
+		err := writeUsersDataToJson()
 		if err != nil {
 			fmt.Println("Error saving json:", err)
 		}
@@ -59,10 +59,10 @@ func append_gratz_to_user(u User) {
 	val.Gratz += 1
 	val.Name = u.FirstName
 	users_data.Users[u.ID] = val
-	if config.is_debug {
+	if config.IsDebug {
 		fmt.Printf("Appending gratz to user %v, amount: %v\n", u.FirstName, val.Gratz)
 	}
-	err := write_users_data_to_json()
+	err := writeUsersDataToJson()
 	if err != nil {
 		fmt.Println("Error saving json:", err)
 	}
