@@ -42,6 +42,7 @@ type Command struct {
 	TextContains string      `json:"text_contains"`
 	Conditions   []Condition `json:"conditions,omitempty"`
 	Actions      []Action    `json:"actions"`
+	Probability  int         `json:"probability,omitempty"`
 }
 
 // ##### TELEGRAM ######

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"slices"
 	"sort"
@@ -31,14 +32,19 @@ func processCommandOnUpdate(u Update) {
 			continue
 		}
 		var conditionFulfilled bool = true
-		for _, w := range command.Conditions {
-			if !checkIfConditionFulfilled(w, u) {
+		for _, cond := range command.Conditions {
+			if !checkIfConditionFulfilled(cond, u) {
 				conditionFulfilled = false
 				break
 			}
 		}
 		if !conditionFulfilled {
 			continue
+		}
+		if command.Probability > 0 {
+			if rand.Intn(100) >= command.Probability {
+				continue
+			}
 		}
 		for _, action := range command.Actions {
 			performActionOnUpdate(action, u)
