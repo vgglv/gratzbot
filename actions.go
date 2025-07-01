@@ -49,9 +49,9 @@ func processCommandOnUpdate(u Update) {
 func checkIfConditionFulfilled(cond Condition, u Update) bool {
 	switch cond {
 	case Condition_Himself:
-		return u.Message.From.ID == u.Message.ReplyMsg.From.ID
+		return u.Message.From.Id == u.Message.ReplyMsg.From.Id
 	case Condition_NotHimself:
-		return u.Message.From.ID != u.Message.ReplyMsg.From.ID
+		return u.Message.From.Id != u.Message.ReplyMsg.From.Id
 	case Condition_BotCommand:
 		return slices.IndexFunc(u.Message.Entities, func(m MessageEntity) bool {
 			return m.Type == "bot_command"
@@ -60,9 +60,9 @@ func checkIfConditionFulfilled(cond Condition, u Update) bool {
 		if len(u.Message.Entities) > 0 {
 			return false
 		}
-		return u.Message.ReplyMsg.From.ID == 0
+		return u.Message.ReplyMsg.From.Id == 0
 	case Condition_Reply:
-		return u.Message.ReplyMsg.From.ID != 0
+		return u.Message.ReplyMsg.From.Id != 0
 	}
 	return true
 }
@@ -81,7 +81,7 @@ func processTopUpdate(u Update) {
 	for i, user := range users {
 		msg += strconv.Itoa(i+1) + ". " + user.UserName + ": " + strconv.Itoa(user.Amount) + "\n"
 	}
-	sendMessageRequest(u.Message.Chat.Id, msg)
+	sendMessageRequest(u.Message.Chat.Id, msg, Message_Nullopt)
 }
 
 func performActionOnUpdate(action Action, u Update) {
@@ -113,6 +113,13 @@ func performActionOnUpdate(action Action, u Update) {
 	case ActionType_Top:
 		processTopUpdate(u)
 	case ActionType_SendMessage:
-		sendMessageRequest(u.Message.Chat.Id, action.Value)
+		switch action.SendTo {
+		case ActionUserType_SendUser:
+			sendMessageRequest(u.Message.Chat.Id, action.Value, u.Message.MessageId)
+		case ActionUserType_ReplyUser:
+			//not implemented
+		case ActionUserType_Chat:
+			sendMessageRequest(u.Message.Chat.Id, action.Value, Message_Nullopt)
+		}
 	}
 }

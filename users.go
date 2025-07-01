@@ -47,9 +47,9 @@ func writeUsersDataToJson() error {
 }
 
 func appendGratzToUser(u User) {
-	val, ok := users_data.Users[u.ID]
+	val, ok := users_data.Users[u.Id]
 	if !ok {
-		users_data.Users[u.ID] = UserInfo{1, u.FirstName}
+		users_data.Users[u.Id] = UserInfo{1, u.FirstName}
 		err := writeUsersDataToJson()
 		if err != nil {
 			fmt.Println("Error saving json:", err)
@@ -58,7 +58,7 @@ func appendGratzToUser(u User) {
 	}
 	val.Gratz += 1
 	val.Name = u.FirstName
-	users_data.Users[u.ID] = val
+	users_data.Users[u.Id] = val
 	if config.IsDebug {
 		fmt.Printf("Appending gratz to user %v, amount: %v\n", u.FirstName, val.Gratz)
 	}

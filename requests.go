@@ -101,15 +101,17 @@ func sendMessageReactionRequest(message_id int, chat_id int, reaction []Reaction
 	return nil
 }
 
-func sendMessageRequest(chat_id int, text string) error {
+func sendMessageRequest(chatId int, text string, messageId int) error {
 	var buf bytes.Buffer
 	params := SendMessagePayload{
-		ChatId: strconv.Itoa(chat_id),
+		ChatId: strconv.Itoa(chatId),
 		Text:   text,
 	}
+	if messageId > 0 {
+		params.ReplyParams.MessageId = messageId
+	}
 	encoder := json.NewEncoder(&buf)
-	err := encoder.Encode(params)
-	if err != nil {
+	if err := encoder.Encode(params); err != nil {
 		return err
 	}
 	url := config.UrlRoute + "/sendMessage"
@@ -137,4 +139,5 @@ func sendMessageRequest(chat_id int, text string) error {
 		return err
 	}
 	return nil
+
 }
