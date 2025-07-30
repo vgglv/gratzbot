@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 
-using namespace nlohmann;
+using nlohmann::json;
 
 struct Config {
     int request_timeout;

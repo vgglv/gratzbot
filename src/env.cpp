@@ -41,7 +41,7 @@ namespace gratzbot {
     }
 
     std::optional<std::string> EnvContainer::getEnv(std::string_view key) {
-        auto it = std::find_if(variables.begin(), variables.end(), [key](const Env& e) {
+        auto it = std::ranges::find_if(variables, [key](const Env& e) {
             return key == e.key;
         });
         if (it != variables.end()) {
