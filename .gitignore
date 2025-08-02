@@ -2,3 +2,5 @@ users.json
 users.json.bak
 .env
 gratzbot
+.venv/
+__pycache__/
