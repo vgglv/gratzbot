@@ -4,12 +4,13 @@
 #include "types.hpp"
 #include "nlohmann/json.hpp"
 #include "env.hpp"
+#include <print>
 
 namespace app {
     int App::run() {
         gratzbot::EnvContainer env;
         env.parseDotEnv();
-        auto bot_api_key = env.getEnv("gratzbot_api_key");
+        auto bot_api_key = env.getEnv("gratz_bot_api_key");
         if (!bot_api_key.has_value()) {
             std::println("Bot api key empty");
             return -1;
@@ -41,7 +42,12 @@ namespace app {
                 cpr::Parameters{{"Content-Type", "application/json"}}
             );
             json answer = json::parse(r.text);
-            std::vector<Update> updates = answer["result"].get<std::vector<Update>>();
+            std::vector<Update> updates;
+            try {
+                updates = answer["result"].get<std::vector<Update>>();
+            } catch(std::exception e) {
+                std::println("Error parsing server answer: {}", e.what());
+            }
             for (const auto& update : updates) {
                 std::println("Update id: {}", update.update_id);
                 users_db.last_update = update.update_id;
