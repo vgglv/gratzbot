@@ -5,10 +5,11 @@ type ActionUserType string
 type Condition string
 
 const (
-	ActionType_SendReaction ActionType = "send_reaction"
-	ActionType_AppendGratz  ActionType = "append_gratz"
-	ActionType_Top          ActionType = "send_gratz_top"
-	ActionType_SendMessage  ActionType = "send_message"
+	ActionType_SendReaction           ActionType = "send_reaction"
+	ActionType_AppendGratz            ActionType = "append_gratz"
+	ActionType_Top                    ActionType = "send_gratz_top"
+	ActionType_SendMessage            ActionType = "send_message"
+	ActionType_SendConditionalMessage ActionType = "send_conditional_message"
 
 	ActionUserType_SendUser  ActionUserType = "send_user"
 	ActionUserType_ReplyUser ActionUserType = "reply_user"
@@ -19,6 +20,7 @@ const (
 	Condition_SoloMessage Condition = "solo_message"
 	Condition_NotHimself  Condition = "not_himself"
 	Condition_Himself     Condition = "himself"
+	Condition_Bot         Condition = "bot"
 
 	Message_Nullopt = -1
 )
@@ -33,16 +35,17 @@ type Config struct {
 }
 
 type Action struct {
-	Type   ActionType     `json:"type"`
-	Value  string         `json:"value"`
-	SendTo ActionUserType `json:"send_to"`
+	Type        ActionType     `json:"type"`
+	Value       string         `json:"value"`
+	SendTo      ActionUserType `json:"send_to"`
+	ValueOnFail string         `json:"value_on_fail,omitempty"`
+	Probability int            `json:"probability,omitempty"`
 }
 
 type Command struct {
 	TextContains string      `json:"text_contains"`
 	Conditions   []Condition `json:"conditions,omitempty"`
 	Actions      []Action    `json:"actions"`
-	Probability  int         `json:"probability,omitempty"`
 }
 
 // ##### TELEGRAM ######

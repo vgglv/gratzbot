@@ -113,11 +113,52 @@
 		"text_contains": "это реально?",
 		"actions": [
 			{
-				"type": "send_message",
+				"type": "send_conditional_message",
 				"value": "да",
+				"send_to": "send_user",
+				"value_on_fail": "нет",
+				"probability": 50
+			}
+		]
+	},
+	{
+		"text_contains": "это правда?",
+		"actions": [
+			{
+				"type": "send_conditional_message",
+				"value": "да",
+				"send_to": "send_user",
+				"value_on_fail": "нет",
+				"probability": 50
+			}
+		]
+	},
+	{
+		"text_contains": "сосал?",
+		"conditions": [
+			"reply",
+			"bot"
+		],
+		"actions": [
+			{
+				"type": "send_reaction",
+				"value": "🤡",
 				"send_to": "send_user"
 			}
+		]
+	},
+	{
+		"text_contains": "хуем по лбу не дало?",
+		"conditions": [
+			"reply",
+			"bot"
 		],
-		"probability": 40
+		"actions": [
+			{
+				"type": "send_reaction",
+				"value": "🤡",
+				"send_to": "send_user"
+			}
+		]
 	}
 ]

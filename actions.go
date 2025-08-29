@@ -41,11 +41,6 @@ func processCommandOnUpdate(u Update) {
 		if !conditionFulfilled {
 			continue
 		}
-		if command.Probability > 0 {
-			if rand.Intn(100) >= command.Probability {
-				continue
-			}
-		}
 		for _, action := range command.Actions {
 			performActionOnUpdate(action, u)
 		}
@@ -69,6 +64,8 @@ func checkIfConditionFulfilled(cond Condition, u Update) bool {
 		return u.Message.ReplyMsg.From.Id == 0
 	case Condition_Reply:
 		return u.Message.ReplyMsg.From.Id != 0
+	case Condition_Bot:
+		return u.Message.ReplyMsg.From.IsBot
 	}
 	return true
 }
@@ -126,6 +123,21 @@ func performActionOnUpdate(action Action, u Update) {
 			//not implemented
 		case ActionUserType_Chat:
 			sendMessageRequest(u.Message.Chat.Id, action.Value, Message_Nullopt)
+		}
+	case ActionType_SendConditionalMessage:
+		var text string = action.Value
+		if action.Probability > 0 {
+			if rand.Intn(100) < action.Probability {
+				text = action.ValueOnFail
+			}
+		}
+		switch action.SendTo {
+		case ActionUserType_SendUser:
+			sendMessageRequest(u.Message.Chat.Id, text, u.Message.MessageId)
+		case ActionUserType_ReplyUser:
+			//not implemented
+		case ActionUserType_Chat:
+			sendMessageRequest(u.Message.Chat.Id, text, Message_Nullopt)
 		}
 	}
 }
