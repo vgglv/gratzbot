@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <curl/curl.h>
-#include <cJSON.h>
+#include "cJSON.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,11 +11,12 @@ typedef struct Config {
 } Config;
 
 typedef struct Command {
-	
+	char* text_contains;
 } Command;
 
 char* read_file(const char* filename);
-int parseConfig(Config*);
+int parseConfig(Config* config);
+Command* parse_commands(int *size);
 
 int main(void) {
 	Config cfg;
@@ -26,6 +27,17 @@ int main(void) {
 		printf("Url: %s\n", cfg.url_route);
 		printf("Sleep time: %d\n", cfg.sleep_time);
 	}
+
+	int command_size;
+	Command* commands = parse_commands(&command_size);
+	for (int i=0; i<command_size; i++) {
+		printf("%s\n", commands[i].text_contains);
+		free(commands[i].text_contains);
+	}
+
+	// is this really needed?
+	free(commands);
+	free(cfg.url_route);
 
     return 0;
 }
@@ -107,4 +119,32 @@ int parseConfig(Config* cfg) {
 	cJSON_Delete(root);
 
 	return 1;
+}
+
+Command* parse_commands(int *size) {
+	char *commands_file = read_file("assets/commands.json");
+	if (!commands_file) {
+		return NULL;
+	}
+	cJSON *root = cJSON_Parse(commands_file);
+	if (!root) {
+		fprintf(stderr, "Failed to parse commands json: %s\n", cJSON_GetErrorPtr());
+		free(commands_file);
+		return NULL;
+	}
+	cJSON *row = NULL;
+	int commands_size = cJSON_GetArraySize(root);
+	*size = commands_size;
+	Command *commands = malloc(commands_size * sizeof(Command));
+	int commands_pos = 0;
+	cJSON_ArrayForEach(row, root) {
+		cJSON* text_contains_json = cJSON_GetObjectItem(row, "text_contains");
+		const char* text_contains = text_contains_json->valuestring;
+		commands[commands_pos].text_contains = strdup(text_contains);
+		//strcpy(commands[commands_pos].text_contains, text_contains);
+		commands_pos++;
+	}
+	cJSON_Delete(root);
+	free(commands_file);
+	return commands;
 }
