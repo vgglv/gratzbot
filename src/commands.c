@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 bool Commands_Parse(CommandsArray* cmd_arr) {
+	Commands_Delete(cmd_arr);
 	char *commands_file = read_file("assets/commands.json");
 	if (!commands_file) {
 		return NULL;
@@ -35,7 +36,7 @@ bool Commands_Parse(CommandsArray* cmd_arr) {
 		cJSON *actions_row_json = NULL;
 		int actions_size = cJSON_GetArraySize(actions_json);
 		if (actions_size > 0) {
-			current_cmd->actions.arr = malloc(commands_size * sizeof(Action));
+			current_cmd->actions.arr = malloc(actions_size * sizeof(Action));
 			current_cmd->actions.size = actions_size;
 			int action_pos = 0;
 			cJSON_ArrayForEach(actions_row_json, actions_json) {
@@ -63,15 +64,21 @@ bool Commands_Parse(CommandsArray* cmd_arr) {
 	return true;
 }
 
-void command_delete(CommandsArray cmds) {
-	for (int i=0; i<cmds.size; i++) {
-		String_Free(&cmds.arr[i].text_contains);
-		for (int j=0; j<cmds.arr[i].actions.size; j++) {
-			String_Free(&cmds.arr[i].actions.arr[i].value);
-			String_Free(&cmds.arr[i].actions.arr[i].send_to);
-			String_Free(&cmds.arr[i].actions.arr[i].type);
+void Commands_Delete(CommandsArray* cmds) {
+	for (int i=0; i<cmds->size; i++) {
+		String_Free(&cmds->arr[i].text_contains);
+		for (int j=0; j<cmds->arr[i].actions.size; j++) {
+			String_Free(&cmds->arr[i].actions.arr[j].value);
+			String_Free(&cmds->arr[i].actions.arr[j].send_to);
+			String_Free(&cmds->arr[i].actions.arr[j].type);
 		}
+		free(cmds->arr[i].actions.arr);
+		cmds->arr[i].actions.arr = NULL;
+		cmds->arr[i].actions.size = 0;
 	}
-	free(cmds.arr);
+
+	free(cmds->arr);
+	cmds->arr = NULL;
+	cmds->size = 0;
 }
 

@@ -3,4 +3,4 @@
 #include <stdbool.h>
 
 bool Commands_Parse(CommandsArray* cmd_arr);
-void command_delete(CommandsArray command);
+void Commands_Delete(CommandsArray* command);

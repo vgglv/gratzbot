@@ -33,7 +33,7 @@ int main(void) {
 	}
 
 	// is this really needed?
-	command_delete(commands);
+	Commands_Delete(&commands);
 	String_Free(&cfg.url_route);
 
     return 0;
