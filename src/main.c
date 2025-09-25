@@ -3,78 +3,43 @@
 #include "cJSON.h"
 #include <stdlib.h>
 #include <string.h>
+#include "types.h"
+#include "utils.h"
+#include "commands.h"
 
-typedef struct Config {
-	int sleep_time;
-	int request_timeout;
-	char* url_route;
-} Config;
-
-typedef struct Command {
-	char* text_contains;
-} Command;
-
-char* read_file(const char* filename);
-int parseConfig(Config* config);
-Command* parse_commands(int *size);
+int parse_config(Config *config);
 
 int main(void) {
 	Config cfg;
-	if (parseConfig(&cfg) < 0) {
+	if (parse_config(&cfg) < 0) {
 		return 1;
 	} else {
 		printf("Timeout: %d\n", cfg.request_timeout);
-		printf("Url: %s\n", cfg.url_route);
+		printf("Url: %s\n", cfg.url_route.data);
 		printf("Sleep time: %d\n", cfg.sleep_time);
 	}
 
-	int command_size;
-	Command* commands = parse_commands(&command_size);
-	for (int i=0; i<command_size; i++) {
-		printf("%s\n", commands[i].text_contains);
-		free(commands[i].text_contains);
+	CommandsArray commands;
+	if (!Commands_Parse(&commands)) {
+		printf("Error parsing commands\n");
+		return 1;
+	}
+
+	for (int i=0; i<commands.size; i++) {
+		for (int j=0; j<commands.arr[i].actions.size; j++) {
+			Action* a = &commands.arr[i].actions.arr[j];
+			printf("[%s][%s][%s]\n", a->type.data, a->value.data, a->send_to.data);
+		}
 	}
 
 	// is this really needed?
-	free(commands);
-	free(cfg.url_route);
+	command_delete(commands);
+	String_Free(&cfg.url_route);
 
     return 0;
 }
 
-char* read_file(const char* filename) {
-	FILE *f = fopen(filename, "rb");
-	if (!f) {
-		perror("fopen");
-		return NULL;
-	}
-
-	fseek(f, 0, SEEK_END);
-	long len = ftell(f);
-	rewind(f);
-
-	char *result = malloc(len + 1);
-	if (!result) {
-		perror("malloc");
-		fclose(f);
-		return NULL;
-	}
-
-	if (fread(result, 1, len, f) != (size_t)len) {
-		perror("fread");
-		free(result);
-		fclose(f);
-		return NULL;
-	}
-
-	result[len] = '\0';
-
-	fclose(f);
-
-	return result;
-}
-
-int parseConfig(Config* cfg) {
+int parse_config(Config* cfg) {
 	char *configBytes = read_file("assets/config.json");
 	if (!configBytes) {
 		return -1;
@@ -107,8 +72,7 @@ int parseConfig(Config* cfg) {
 
 	cJSON *url = cJSON_GetObjectItemCaseSensitive(root, "url_route");
 	if (cJSON_IsString(url) && url->valuestring != NULL) {
-		cfg->url_route = malloc(strlen(url->valuestring) + 1);
-		strcpy(cfg->url_route, url->valuestring);
+		cfg->url_route = String_New(url->valuestring);
 		//cfg->url_route = url->valuestring;
 	} else {
 		fprintf(stderr, "Failed to parse json: 'url_route'\n");
@@ -121,30 +85,3 @@ int parseConfig(Config* cfg) {
 	return 1;
 }
 
-Command* parse_commands(int *size) {
-	char *commands_file = read_file("assets/commands.json");
-	if (!commands_file) {
-		return NULL;
-	}
-	cJSON *root = cJSON_Parse(commands_file);
-	if (!root) {
-		fprintf(stderr, "Failed to parse commands json: %s\n", cJSON_GetErrorPtr());
-		free(commands_file);
-		return NULL;
-	}
-	cJSON *row = NULL;
-	int commands_size = cJSON_GetArraySize(root);
-	*size = commands_size;
-	Command *commands = malloc(commands_size * sizeof(Command));
-	int commands_pos = 0;
-	cJSON_ArrayForEach(row, root) {
-		cJSON* text_contains_json = cJSON_GetObjectItem(row, "text_contains");
-		const char* text_contains = text_contains_json->valuestring;
-		commands[commands_pos].text_contains = strdup(text_contains);
-		//strcpy(commands[commands_pos].text_contains, text_contains);
-		commands_pos++;
-	}
-	cJSON_Delete(root);
-	free(commands_file);
-	return commands;
-}
