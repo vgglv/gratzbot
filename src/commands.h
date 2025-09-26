@@ -4,3 +4,4 @@
 
 bool Commands_Parse(CommandsArray* cmd_arr);
 void Commands_Delete(CommandsArray* command);
+void Commands_Print(Command* cmd);

@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "types.h"
 #include "utils.h"
 #include "cJSON.h"
 #include <stdio.h>
@@ -41,8 +42,10 @@ bool Commands_Parse(CommandsArray* cmd_arr) {
 			int action_pos = 0;
 			cJSON_ArrayForEach(actions_row_json, actions_json) {
 				cJSON *type_json = cJSON_GetObjectItem(actions_row_json, "type");
-				cJSON *send_to = cJSON_GetObjectItem(actions_row_json, "send_to");
+				cJSON *send_to_json = cJSON_GetObjectItem(actions_row_json, "send_to");
 				cJSON *value_json = cJSON_GetObjectItem(actions_row_json, "value");
+				cJSON *value_on_fail_json = cJSON_GetObjectItem(actions_row_json, "value_on_fail");
+				cJSON *probability_json = cJSON_GetObjectItem(actions_row_json, "probability");
 
 				Action* current_action = &current_cmd->actions.arr[action_pos];
 				current_action->type = String_New(type_json->valuestring);
@@ -51,8 +54,16 @@ bool Commands_Parse(CommandsArray* cmd_arr) {
 					current_action->value = String_New(value_json->valuestring);
 				}
 
-				if (send_to) {
-					current_action->send_to = String_New(send_to->valuestring);
+				if (send_to_json) {
+					current_action->send_to = String_New(send_to_json->valuestring);
+				}
+
+				if (value_on_fail_json) {
+					current_action->value_on_fail = String_New(value_on_fail_json->valuestring);
+				}
+
+				if (probability_json) {
+					current_action->probability = probability_json->valueint;
 				}
 				action_pos++;
 			}
@@ -82,3 +93,35 @@ void Commands_Delete(CommandsArray* cmds) {
 	cmds->size = 0;
 }
 
+void Commands_Print(Command* cmd) {
+	printf("Command:\n");
+	if (cmd->text_contains.length > 0) {
+		printf("  Text contains: %s\n", cmd->text_contains.data);
+	}
+	if (cmd->condition & CONDITION_BOT) {
+		printf("  Condition: BOT\n");
+	}
+	if (cmd->condition & CONDITION_BOT_COMMAND) {
+		printf("  Condition: BOT_COMMAND\n");
+	}
+	if (cmd->condition & CONDITION_HIMSELF) {
+		printf("  Condition: HIMSELF\n");
+	}
+	if (cmd->condition & CONDITION_REPLY) {
+		printf("  Condition: REPLY\n");
+	}
+	if (cmd->condition & CONDITION_NOT_HIMSELF) {
+		printf("  Condition: NOT_HIMSELF\n");
+	}
+	if (cmd->condition & CONDITION_SOLO_MESSAGE) {
+		printf("  Condition: SOLO_MESSAGE\n");
+	}
+
+	if (cmd->actions.size > 0) {
+		printf("  Actions:\n");
+		for (int j=0; j<cmd->actions.size; j++) {
+			Action* a = &cmd->actions.arr[j];
+			printf("    Type: %s, value: %s, send_to: %s, value_on_fail: %s, probability: %d\n", a->type.data, a->value.data, a->send_to.data, a->value_on_fail.data, a->probability);
+		}
+	}
+}

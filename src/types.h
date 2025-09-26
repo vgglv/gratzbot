@@ -40,3 +40,4 @@ typedef struct {
 	Command* arr;
 	int size;
 } CommandsArray;
+
