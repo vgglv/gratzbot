@@ -1,4 +1,5 @@
 #pragma once
 #include "types.h"
+#include <stdbool.h>
 
-int Config_Parse(Config *config);
+bool Config_Parse(Config *config);

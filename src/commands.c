@@ -80,6 +80,7 @@ void Commands_Delete(CommandsArray* cmds) {
 		String_Free(&cmds->arr[i].text_contains);
 		for (int j=0; j<cmds->arr[i].actions.size; j++) {
 			String_Free(&cmds->arr[i].actions.arr[j].value);
+			String_Free(&cmds->arr[i].actions.arr[j].value_on_fail);
 			String_Free(&cmds->arr[i].actions.arr[j].send_to);
 			String_Free(&cmds->arr[i].actions.arr[j].type);
 		}

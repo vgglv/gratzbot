@@ -4,17 +4,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int Config_Parse(Config* cfg) {
+bool Config_Parse(Config* cfg) {
 	char *configBytes = read_file("assets/config.json");
 	if (!configBytes) {
-		return -1;
+		return false;
 	}
 	
 	cJSON *root = cJSON_Parse(configBytes);
 	if (!root) {
 		fprintf(stderr, "Failed to parse json: %s\n", cJSON_GetErrorPtr());
 		free(configBytes);
-		return -1;
+		return false;
 	}
 
 	cJSON *sleep_time = cJSON_GetObjectItemCaseSensitive(root, "sleep_time");
@@ -23,7 +23,7 @@ int Config_Parse(Config* cfg) {
 	} else {
 		fprintf(stderr, "Failed to parse json: 'sleep_time'\n");
 		free(configBytes);
-		return -1;
+		return false;
 	}
 
 	cJSON *timeout = cJSON_GetObjectItemCaseSensitive(root, "request_timeout");
@@ -32,7 +32,7 @@ int Config_Parse(Config* cfg) {
 	} else {
 		fprintf(stderr, "Failed to parse json: 'request_timeout'\n");
 		free(configBytes);
-		return -1;
+		return false;
 	}
 
 	cJSON *url = cJSON_GetObjectItemCaseSensitive(root, "url_route");
@@ -42,11 +42,11 @@ int Config_Parse(Config* cfg) {
 	} else {
 		fprintf(stderr, "Failed to parse json: 'url_route'\n");
 		free(configBytes);
-		return -1;
+		return false;
 	}
 	free(configBytes);
 	cJSON_Delete(root);
 
-	return 1;
+	return true;
 }
 
