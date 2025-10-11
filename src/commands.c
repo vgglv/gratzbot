@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 bool Commands_Parse(CommandsArray* cmd_arr) {
-	Commands_Delete(cmd_arr);
 	char *commands_file = read_file("assets/commands.json");
 	if (!commands_file) {
 		return NULL;

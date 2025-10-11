@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <curl/curl.h>
+#include "requests.h"
 #include "types.h"
 #include "commands.h"
 #include "config.h"
 #include "users.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include "env.h"
 
 int main(void) {
+	load_env(".env");
+
 	Config cfg;
 	if (!Config_Parse(&cfg)) {
 		printf("Error parsing config\n");
@@ -27,10 +33,26 @@ int main(void) {
 //		Commands_Print(&commands.arr[i]);
 //	}
 
-	if (!UserArray_Parse()) {
+	UserArray user_array = {
+		.size = 0,
+		.arr = NULL,
+		.capacity = 0
+	};
+	int last_update = 0;
+	if (!UserArray_Parse(&user_array, &last_update)) {
 		printf("Failed to parse users json. Maybe it does not exists?\n");
 		return 1;
 	}
+
+	const char* bot_token = getenv("gratz_bot_api_key");
+	Telegram_getMe(bot_token);
+
+//	while(true) {
+//		sleep(cfg.sleep_time);
+//		printf("Polling...\n");
+//
+//
+//	}
 
 //	User* user = UserArray_Get("7695735697");
 //	if (user) {
@@ -42,7 +64,7 @@ int main(void) {
 	// is this really needed?
 	Commands_Delete(&commands);
 	String_Free(&cfg.url_route);
-	UserArray_Clear();
+	UserArray_Clear(&user_array);
 
     return 0;
 }

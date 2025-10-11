@@ -1,6 +1,5 @@
 #pragma once
 #include "my_string.h"
-#include <stdlib.h>
 
 typedef struct {
 	String uid;
@@ -14,10 +13,9 @@ typedef struct {
 	User* arr;
 } UserArray;
 
-bool UserArray_Parse(void);
-User* UserArray_Get(const char* uid);
-void UserArray_Clear(void);
+bool UserArray_Parse(UserArray* user_array, int* last_update);
+User* UserArray_Get(UserArray* user_array, const char* uid);
+void UserArray_Clear(UserArray* user_array);
+bool UserArray_Add(UserArray* user_array, String uid, String name, int gratz);
 
-bool User_Add(String uid, String name, int gratz);
 void User_Print(User* u);
-void User_Clear(void);
