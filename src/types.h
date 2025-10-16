@@ -1,5 +1,6 @@
 #pragma once
 #include "my_string.h"
+#include <stdbool.h>
 
 typedef enum {
 	CONDITION_NONE         = 0,
@@ -41,3 +42,18 @@ typedef struct {
 	int size;
 } CommandsArray;
 
+typedef struct {
+	int message_id;
+	unsigned long date;
+	String text;
+} Message;
+
+typedef struct {
+	unsigned long update_id;
+	Message message;
+} UpdateResult;
+
+typedef struct {
+	UpdateResult* arr;
+	int size;
+} UpdateArray;

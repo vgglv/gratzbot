@@ -45,7 +45,7 @@ int main(void) {
 	}
 
 	const char* bot_token = getenv("gratz_bot_api_key");
-	Telegram_getMe(bot_token);
+	UpdateList updates = Telegram_getUpdates(bot_token, 30, last_update);
 
 //	while(true) {
 //		sleep(cfg.sleep_time);
