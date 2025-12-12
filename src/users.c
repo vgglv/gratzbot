@@ -4,20 +4,31 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "errors.h"
 
-bool UserArray_Parse(UserArray* user_array, int* last_update) {
+int UserArray_Parse(UserArray* user_array, int* last_update) {
 	char *users_file = read_file("users.json");
 	if (!users_file) {
-		return false;
+		return ERROR_USER_FILE_NOT_FOUND;
 	}
 	cJSON *root = cJSON_Parse(users_file);
 	if (!root) {
 		fprintf(stderr, "Failed to parse user json: %s\n", cJSON_GetErrorPtr());
 		free(users_file);
-		return false;
+		return ERROR_PARSE_ERROR;
 	}
 	cJSON *last_update_json = cJSON_GetObjectItem(root, "last_update");
+	if (!last_update_json) {
+		fprintf(stderr, "Failed to parse users json, last_update value not found\n");
+		free(users_file);
+		return ERROR_PARSE_ERROR;
+	}
 	cJSON *users_json = cJSON_GetObjectItem(root, "Users");
+	if (!users_json) {
+		fprintf(stderr, "Failed to parse users json, Users value not found\n");
+		free(users_file);
+		return ERROR_PARSE_ERROR;
+	}
 	*last_update = last_update_json->valueint;
 	cJSON* row_json = NULL;
 	cJSON_ArrayForEach(row_json, users_json) {
@@ -40,7 +51,7 @@ bool UserArray_Parse(UserArray* user_array, int* last_update) {
 	cJSON_Delete(root);
 	free(users_file);
 
-	return true;
+	return 0;
 }
 
 bool UserArray_Add(UserArray* user_array, String uid, String name, int gratz) {

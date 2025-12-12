@@ -60,21 +60,19 @@ void Telegram_getMe(const char* bot_token) {
 	}
 }
 
-void Telegram_getUpdates(const char* bot_token, int timeout, long int last_update) {
+String Telegram_getUpdates(String url, int timeout, long int last_update) {
 	Curl_Initialize();
-	char url[512];
-	snprintf(url, sizeof(url), "https://api.telegram.org/bot%s/getUpdates?timeout=%d&offset=%ld", bot_token, timeout, last_update);
+	char url_buffer[512];
+	snprintf(url_buffer, sizeof(url_buffer), "%s/getUpdates?timeout=%d&offset=%ld", url.data, timeout, last_update);
+	printf("url_buffer: %s\n", url_buffer);
 
 	String output = {0};
-	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_URL, url_buffer);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*) &output);
 	CURLcode res = curl_easy_perform(curl);
-	if (res == CURLE_OK) {
-		printf("Telegram_getUpdate response:\n%s\n", output.data);
-	} else {
+	if (res != CURLE_OK) {
 		fprintf(stderr, "[ERROR][Telegram_getUpdates] curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	}
-
-	String_Free(&output);
+	return output;
 }

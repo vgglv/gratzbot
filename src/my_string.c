@@ -48,3 +48,22 @@ bool String_Equals(const String *a, const String *b) {
 	}
 	return true;
 }
+
+String String_Append(String a, String b) {
+	String result = {0};
+	int total_length = a.length + b.length;
+	result.data = malloc(total_length + 1);
+	for (int i=0; i<a.length; i++) {
+		result.data[i] = a.data[i];
+	}
+	int offset = a.length;
+	for (int i=0; i<b.length;i++) {
+		result.data[i+offset] = b.data[i];
+	}
+	result.data[total_length] = '\0';
+	return result;
+}
+
+bool StringIsOK(String str) {
+	return str.length > 0 && str.data != NULL;
+}

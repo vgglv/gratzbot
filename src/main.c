@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <curl/curl.h>
+#include "errors.h"
 #include "requests.h"
 #include "types.h"
 #include "commands.h"
@@ -33,19 +34,27 @@ int main(void) {
 //		Commands_Print(&commands.arr[i]);
 //	}
 
-	UserArray user_array = {
-		.size = 0,
-		.arr = NULL,
-		.capacity = 0
-	};
+	UserArray user_array = {0};
 	int last_update = 0;
-	if (!UserArray_Parse(&user_array, &last_update)) {
-		printf("Failed to parse users json. Maybe it does not exists?\n");
-		return 1;
+	int user_parse_result = UserArray_Parse(&user_array, &last_update);
+	if (user_parse_result != NOT_AN_ERROR) {
+		switch (user_parse_result) {
+			case ERROR_PARSE_ERROR:
+				break;
+			default:
+				return 1;
+		}
 	}
+	String bot_token = String_New(getenv("gratz_bot_api_key"));
+	String total_url = String_Append(cfg.url_route, bot_token);
 
-	const char* bot_token = getenv("gratz_bot_api_key");
-	UpdateList updates = Telegram_getUpdates(bot_token, 30, last_update);
+	String update_string = Telegram_getUpdates(total_url, cfg.request_timeout, last_update);
+	if (StringIsOK(update_string)) {
+		UpdateArray array = {0};
+		ParseUpdates(update_string, &array);
+		String_Free(&update_string);
+	}
+	String_Free(&total_url);
 
 //	while(true) {
 //		sleep(cfg.sleep_time);

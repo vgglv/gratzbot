@@ -1,36 +1,59 @@
 #include "env.h"
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "utils.h"
 
 void load_env(const char *filename) {
-	FILE *file = fopen(filename, "r");
-	if (!file) {
-		perror("fopen");
-		return;
-	}
-
-	char line[512];
-	while (fgets(line, sizeof(line), file)) {
-		char *start = line;
-		while (isspace((unsigned char)*start)) start++;
-
-		if (*start == '#' || *start == '\0')
+	char* buffer = read_file(filename);
+	int length = strlen(buffer);
+	int buffer_size = 128;
+	char key_buffer[buffer_size];
+	char value_buffer[buffer_size];
+	int key_pos = 0;
+	int value_pos = 0;
+	bool reading_key = false;
+	bool reading_value = false;
+	for (int i=0; i<length; i++) {
+		if (buffer[i] == '=') {
+			reading_key = false;
+			reading_value = true;
 			continue;
+		}
+		if (buffer[i] == '\n') {
+			key_buffer[key_pos] = '\0';
+			value_buffer[value_pos] = '\0';
 
-		char *equal = strchr(start, '=');
-		if (!equal) continue;
+			key_pos = 0;
+			value_pos = 0;
 
-		*equal = '\0';
-		char *key = start;
-		char *value = equal + 1;
+			setenv(key_buffer, value_buffer, 1);
 
-		key[strcspn(key, " \t\r\n")] = '\0';
-		value[strcspn(value, " \t\r\n")] = '\0';
-
-		setenv(key, value, 1); // overwrite = 1
+			memset(key_buffer, 0, buffer_size);
+			memset(value_buffer, 0, buffer_size);
+			continue;
+		}
+		if (key_pos == 0) {
+			reading_key = true;
+			reading_value = false;
+		}
+		if (reading_key) {
+			if (isspace(buffer[i])) {
+				continue;
+			}
+			key_buffer[key_pos] = buffer[i];
+			key_pos++;
+			continue;
+		}
+		if (reading_value) {
+			if (isspace(buffer[i])) {
+				continue;
+			}
+			value_buffer[value_pos] = buffer[i];
+			value_pos++;
+			continue;
+		}
 	}
-
-	fclose(file);
+	free(buffer);
 }

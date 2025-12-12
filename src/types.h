@@ -57,3 +57,5 @@ typedef struct {
 	UpdateResult* arr;
 	int size;
 } UpdateArray;
+
+bool ParseUpdates(String data, UpdateArray *array);
